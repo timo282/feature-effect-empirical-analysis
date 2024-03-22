@@ -1,1 +1,3 @@
-# feature-effect-empirical-analysis
+# Empirical Analysis of Feature Effects
+
+Research Project at LMU
