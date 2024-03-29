@@ -1,5 +1,6 @@
 from typing_extensions import List
 from configparser import ConfigParser
+from pathlib import Path
 from joblib import dump
 from datetime import datetime
 import pandas as pd
@@ -26,7 +27,11 @@ def simulate(
 ):
     df_model_results = pd.DataFrame(
         columns=[
+            "model_id",
             "model",
+            "simulation",
+            "n_train",
+            "noise_sd",
             "mse_train",
             "mse_test",
             "mae_train",
@@ -54,7 +59,7 @@ def simulate(
                         X_train,
                         y_train,
                         n_trials=config.getint(
-                            "simulation_metadata", "n_trials"
+                            "simulation_metadata", "n_tuning_trials"
                         ),
                         cv=config.getint(
                             "simulation_metadata", "n_tuning_folds"
@@ -70,29 +75,29 @@ def simulate(
                     # save model
                     model_folder = config.get("storage", "models")
                     model_name = model.__class__.__name__
+                    date = datetime.now().strftime("%Y%m%d_%H%M%S")
                     dump(
                         model,
-                        f"{model_folder}/{model_name}_{datetime.now()}.joblib",
+                        Path(f"{model_folder}/{model_name}_{date}.joblib"),
                     )
 
                     # evaluate model
                     model_results = eval_model(
                         model, X_train, y_train, X_test, y_test
                     )
-                    df_model_results = df_model_results.append(
-                        {
-                            "model": model_name,
-                            "simulation": i,
-                            "mse_train": model_results[0],
-                            "mse_test": model_results[1],
-                            "mae_train": model_results[2],
-                            "mae_test": model_results[3],
-                            "r2_train": model_results[4],
-                            "r2_test": model_results[5],
-                        },
-                        ignore_index=True,
-                    )
-
+                    df_model_results.loc[len(df_model_results)] = {
+                        "model_id": f"{model_name}_{date}",
+                        "model": model_name,
+                        "simulation": i,
+                        "n_train": n_train,
+                        "noise_sd": noise_sd,
+                        "mse_train": model_results[0],
+                        "mse_test": model_results[1],
+                        "mae_train": model_results[2],
+                        "mae_test": model_results[3],
+                        "r2_train": model_results[4],
+                        "r2_test": model_results[5],
+                    }
                     # save model results
                     model_results_storage = config.get(
                         "storage", "model_results"

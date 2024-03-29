@@ -17,17 +17,27 @@ def objective(
 ) -> float:
     if isinstance(model, RandomForestRegressor):
         # using the values from https://www.jmlr.org/papers/v20/18-444.html
-        model.set_params(
-            n_estimators=trial.suggest_int("n_estimators", 200, 1750),
-            max_depth=trial.suggest_int("max_depth", 2, 30),
-            min_samples_split=trial.suggest_float(
-                "min_samples_split_frac", 0.01, 0.5
-            ),
-            bootstrap=trial.suggest_categorical("bootstrap", [True, False]),
-            max_samples=trial.suggest_float("max_samples", 0.3, 0.975),
-            max_features=trial.suggest_float("max_features_frac", 0.035, 0.7),
-            random_state=42,
+        hyperparams = dict()
+        hyperparams["n_estimators"] = trial.suggest_int(
+            "n_estimators", 200, 1750
         )
+        hyperparams["max_depth"] = trial.suggest_int("max_depth", 2, 30)
+        hyperparams["min_samples_split"] = trial.suggest_float(
+            "min_samples_split", 0.01, 0.5
+        )
+        hyperparams["bootstrap"] = trial.suggest_categorical(
+            "bootstrap", [True, False]
+        )
+        hyperparams["max_samples"] = (
+            trial.suggest_float("max_samples", 0.3, 0.975)
+            if hyperparams["bootstrap"]
+            else trial.suggest_categorical("max_samples", [None])
+        )
+        hyperparams["max_features"] = trial.suggest_float(
+            "max_features", 0.035, 0.7
+        )
+
+        model.set_params(**hyperparams, random_state=42)
     else:
         raise NotImplementedError("Base estimator not implemented yet")
 
