@@ -31,4 +31,4 @@ Subsequently, PDP (for marginal) and ALE (for local conditional) are applied to 
 To compare and evaluate the distance of the estimated feature effects to their respective groundtruths, the L2 loss at different “grid points” is calculated.
 
 # Open Questions
-- number of simulations: 100, 500, 1000?
+- number of simulations: 100?

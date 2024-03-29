@@ -68,16 +68,22 @@ def optimize(
 
 
 def train_model(
-    model: BaseEstimator, X_train: np.ndarray, y_train: np.ndarray
+    model: BaseEstimator,
+    X_train: np.ndarray,
+    y_train: np.ndarray,
+    n_trials: int,
+    cv: int,
+    metric: str,
+    direction: Literal["maximize", "minimize"],
 ) -> BaseEstimator:
     study = optimize(
         model=model,
         X_train=X_train,
         y_train=y_train,
-        n_trials=500,
-        cv=5,
-        metric="neg_mean_squared_error",
-        direction="maximize",
+        n_trials=n_trials,
+        cv=cv,
+        metric=metric,
+        direction=direction,
     )
 
     hyperparams = study.best_params
