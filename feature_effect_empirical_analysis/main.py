@@ -3,6 +3,7 @@ from configparser import ConfigParser
 from pathlib import Path
 from joblib import dump
 from datetime import datetime
+import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.base import BaseEstimator
@@ -25,22 +26,7 @@ def simulate(
     noise_sds: List[float],
     config: ConfigParser,
 ):
-    df_model_results = pd.DataFrame(
-        columns=[
-            "model_id",
-            "model",
-            "simulation",
-            "n_train",
-            "noise_sd",
-            "mse_train",
-            "mse_test",
-            "mae_train",
-            "mae_test",
-            "r2_train",
-            "r2_test",
-        ]
-    )
-
+    np.random.seed(42)
     for i in range(n_sim):
         for n_train in n_trains:
             for noise_sd in noise_sds:
@@ -70,6 +56,9 @@ def simulate(
                         direction=config.get(
                             "simulation_metadata", "tuning_direction"
                         ),
+                        tuning_studies_folder=config.get(
+                            "storage", "tuning_studies_folder"
+                        ),
                     )
 
                     # save model
@@ -85,25 +74,29 @@ def simulate(
                     model_results = eval_model(
                         model, X_train, y_train, X_test, y_test
                     )
-                    df_model_results.loc[len(df_model_results)] = {
-                        "model_id": f"{model_name}_{date}",
-                        "model": model_name,
-                        "simulation": i,
-                        "n_train": n_train,
-                        "noise_sd": noise_sd,
-                        "mse_train": model_results[0],
-                        "mse_test": model_results[1],
-                        "mae_train": model_results[2],
-                        "mae_test": model_results[3],
-                        "r2_train": model_results[4],
-                        "r2_test": model_results[5],
-                    }
+
+                    df_model_result = pd.DataFrame(
+                        {
+                            "model_id": [f"{model_name}_{date}"],
+                            "model": [model_name],
+                            "simulation": [i+1],
+                            "n_train": [n_train],
+                            "noise_sd": [noise_sd],
+                            "mse_train": [model_results[0]],
+                            "mse_test": [model_results[1]],
+                            "mae_train": [model_results[2]],
+                            "mae_test": [model_results[3]],
+                            "r2_train": [model_results[4]],
+                            "r2_test": [model_results[5]],
+                        }
+                    )
+
                     # save model results
                     model_results_storage = config.get(
                         "storage", "model_results"
                     )
                     engine = create_engine(f"sqlite://{model_results_storage}")
-                    df_model_results.to_sql(
+                    df_model_result.to_sql(
                         "model_results", con=engine, if_exists="append"
                     )
 

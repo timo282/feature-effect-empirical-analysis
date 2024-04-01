@@ -1,5 +1,6 @@
 from typing_extensions import Literal
 from datetime import datetime
+import uuid
 import numpy as np
 import optuna
 from sklearn.base import BaseEstimator
@@ -25,13 +26,11 @@ def objective(
         hyperparams["min_samples_split"] = trial.suggest_float(
             "min_samples_split", 0.01, 0.5
         )
-        hyperparams["bootstrap"] = trial.suggest_categorical(
-            "bootstrap", [True, False]
-        )
-        hyperparams["max_samples"] = (
-            trial.suggest_float("max_samples", 0.3, 0.975)
-            if hyperparams["bootstrap"]
-            else trial.suggest_categorical("max_samples", [None])
+        # hyperparams["bootstrap"] = trial.suggest_categorical(
+        #     "bootstrap", [True, False]
+        # )
+        hyperparams["max_samples"] = trial.suggest_float(
+            "max_samples", 0.3, 0.975
         )
         hyperparams["max_features"] = trial.suggest_float(
             "max_features", 0.035, 0.7
@@ -56,12 +55,15 @@ def optimize(
     cv: int,
     metric: str,
     direction: Literal["maximize", "minimize"],
+    tuning_studies_folder: str
 ) -> optuna.study.Study:
     model_name = model.__class__.__name__
+    date = datetime.now().strftime('%Y%m%d_%H%M%S')
     study = optuna.create_study(
-        storage=f"sqlite:///tuning/{model_name}.db",
-        study_name=f"{model_name}_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
+        storage=f"sqlite://{tuning_studies_folder}/{model_name}.db",
+        study_name=f"{model_name}_{date}_{uuid.uuid4().hex}",
         direction=direction,
+        load_if_exists=False
     )
 
     study.optimize(
@@ -85,6 +87,7 @@ def train_model(
     cv: int,
     metric: str,
     direction: Literal["maximize", "minimize"],
+    tuning_studies_folder: str
 ) -> BaseEstimator:
     study = optimize(
         model=model,
@@ -94,6 +97,7 @@ def train_model(
         cv=cv,
         metric=metric,
         direction=direction,
+        tuning_studies_folder=tuning_studies_folder
     )
 
     hyperparams = study.best_params
