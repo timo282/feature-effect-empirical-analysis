@@ -55,15 +55,17 @@ def optimize(
     cv: int,
     metric: str,
     direction: Literal["maximize", "minimize"],
-    tuning_studies_folder: str
+    tuning_studies_folder: str,
 ) -> optuna.study.Study:
     model_name = model.__class__.__name__
-    date = datetime.now().strftime('%Y%m%d_%H%M%S')
+    date = datetime.now().strftime("%Y%m%d_%H%M%S")
+    sampler = optuna.samplers.TPESampler(seed=42)
     study = optuna.create_study(
+        sampler=sampler,
         storage=f"sqlite://{tuning_studies_folder}/{model_name}.db",
         study_name=f"{model_name}_{date}_{uuid.uuid4().hex}",
         direction=direction,
-        load_if_exists=False
+        load_if_exists=False,
     )
 
     study.optimize(
@@ -87,7 +89,7 @@ def train_model(
     cv: int,
     metric: str,
     direction: Literal["maximize", "minimize"],
-    tuning_studies_folder: str
+    tuning_studies_folder: str,
 ) -> BaseEstimator:
     study = optimize(
         model=model,
@@ -97,7 +99,7 @@ def train_model(
         cv=cv,
         metric=metric,
         direction=direction,
-        tuning_studies_folder=tuning_studies_folder
+        tuning_studies_folder=tuning_studies_folder,
     )
 
     hyperparams = study.best_params
