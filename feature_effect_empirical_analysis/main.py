@@ -48,6 +48,12 @@ def simulate(
                 )
 
                 for model in models:
+                    model_str = model.__class__.__name__
+                    date = datetime.now().strftime("%Y%m%d")
+                    model_name = (
+                        f"{model_str}_{date}_{i+1}_{n_train}_{noise_sd}"
+                    )
+
                     # train and tune model
                     model = train_model(
                         model,
@@ -58,16 +64,13 @@ def simulate(
                         metric=metric,
                         direction=direction,
                         tuning_studies_folder=tuning_studies_folder,
+                        model_name=model_name,
                     )
 
                     # save model
-                    model_name = model.__class__.__name__
-                    date = datetime.now().strftime("%Y%m%d_%H%M%S")
                     dump(
                         model,
-                        Path(
-                            f"{model_folder}/{model_name}_{date}_{i+1}.joblib"
-                        ),
+                        Path(f"{model_folder}/{model_name}.joblib"),
                     )
 
                     # evaluate model
@@ -77,8 +80,8 @@ def simulate(
 
                     df_model_result = pd.DataFrame(
                         {
-                            "model_id": [f"{model_name}_{date}_{i+1}"],
-                            "model": [model_name],
+                            "model_id": [model_name],
+                            "model": [model_str],
                             "simulation": [i + 1],
                             "n_train": [n_train],
                             "noise_sd": [noise_sd],

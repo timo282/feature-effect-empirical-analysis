@@ -1,5 +1,4 @@
 from typing_extensions import Literal
-from datetime import datetime
 import uuid
 import numpy as np
 import optuna
@@ -56,14 +55,14 @@ def optimize(
     metric: str,
     direction: Literal["maximize", "minimize"],
     tuning_studies_folder: str,
+    model_name: str,
 ) -> optuna.study.Study:
-    model_name = model.__class__.__name__
-    date = datetime.now().strftime("%Y%m%d_%H%M%S")
+    model_str = model.__class__.__name__
     sampler = optuna.samplers.TPESampler(seed=42)
     study = optuna.create_study(
         sampler=sampler,
-        storage=f"sqlite://{tuning_studies_folder}/{model_name}.db",
-        study_name=f"{model_name}_{date}_{uuid.uuid4().hex}",
+        storage=f"sqlite://{tuning_studies_folder}/{model_str}.db",
+        study_name=f"{model_name}_{uuid.uuid4().hex}",
         direction=direction,
         load_if_exists=False,
     )
@@ -85,6 +84,7 @@ def train_model(
     metric: str,
     direction: Literal["maximize", "minimize"],
     tuning_studies_folder: str,
+    model_name: str,
 ) -> BaseEstimator:
     study = optimize(
         model=model,
@@ -95,6 +95,7 @@ def train_model(
         metric=metric,
         direction=direction,
         tuning_studies_folder=tuning_studies_folder,
+        model_name=model_name,
     )
 
     hyperparams = study.best_params
