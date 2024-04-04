@@ -8,7 +8,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 
 
-def objective(
+def _objective(
     model: BaseEstimator,
     X_train: np.ndarray,
     y_train: np.ndarray,
@@ -41,7 +41,7 @@ def objective(
         raise NotImplementedError("Base estimator not implemented yet")
 
     score = cross_val_score(
-        model, X_train, y_train, cv=cv, scoring=metric
+        model, X_train, y_train, cv=cv, scoring=metric, n_jobs=-1
     ).mean()
 
     return score
@@ -68,15 +68,10 @@ def optimize(
         load_if_exists=False,
     )
 
-    study.optimize(
-        lambda trial: objective(model, X_train, y_train, trial, cv, metric),
-        n_trials=n_trials,
-    )
+    def objective(trial: optuna.trial.Trial):
+        return _objective(model, X_train, y_train, trial, cv, metric)
 
-    def obj(trial: optuna.trial.Trial):
-        return objective(model, X_train, y_train, trial, cv, metric)
-
-    study.optimize(obj, n_trials=n_trials, n_jobs=-1)
+    study.optimize(objective, n_trials=n_trials)
 
     return study
 
