@@ -27,6 +27,15 @@ def simulate(
     config: ConfigParser,
 ):
     np.random.seed(42)
+    model_folder = config.get("storage", "models")
+    model_results_storage = config.get("storage", "model_results")
+    engine = create_engine(f"sqlite://{model_results_storage}")
+    n_trials = config.getint("simulation_metadata", "n_tuning_trials")
+    cv = config.getint("simulation_metadata", "n_tuning_folds")
+    metric = config.get("simulation_metadata", "tuning_metric")
+    direction = config.get("simulation_metadata", "tuning_direction")
+    tuning_studies_folder = config.get("storage", "tuning_studies_folder")
+
     for i in range(n_sim):
         for n_train in n_trains:
             for noise_sd in noise_sds:
@@ -44,30 +53,21 @@ def simulate(
                         model,
                         X_train,
                         y_train,
-                        n_trials=config.getint(
-                            "simulation_metadata", "n_tuning_trials"
-                        ),
-                        cv=config.getint(
-                            "simulation_metadata", "n_tuning_folds"
-                        ),
-                        metric=config.get(
-                            "simulation_metadata", "tuning_metric"
-                        ),
-                        direction=config.get(
-                            "simulation_metadata", "tuning_direction"
-                        ),
-                        tuning_studies_folder=config.get(
-                            "storage", "tuning_studies_folder"
-                        ),
+                        n_trials=n_trials,
+                        cv=cv,
+                        metric=metric,
+                        direction=direction,
+                        tuning_studies_folder=tuning_studies_folder,
                     )
 
                     # save model
-                    model_folder = config.get("storage", "models")
                     model_name = model.__class__.__name__
                     date = datetime.now().strftime("%Y%m%d_%H%M%S")
                     dump(
                         model,
-                        Path(f"{model_folder}/{model_name}_{date}.joblib"),
+                        Path(
+                            f"{model_folder}/{model_name}_{date}_{i+1}.joblib"
+                        ),
                     )
 
                     # evaluate model
@@ -77,9 +77,9 @@ def simulate(
 
                     df_model_result = pd.DataFrame(
                         {
-                            "model_id": [f"{model_name}_{date}"],
+                            "model_id": [f"{model_name}_{date}_{i+1}"],
                             "model": [model_name],
-                            "simulation": [i+1],
+                            "simulation": [i + 1],
                             "n_train": [n_train],
                             "noise_sd": [noise_sd],
                             "mse_train": [model_results[0]],
@@ -92,10 +92,6 @@ def simulate(
                     )
 
                     # save model results
-                    model_results_storage = config.get(
-                        "storage", "model_results"
-                    )
-                    engine = create_engine(f"sqlite://{model_results_storage}")
                     df_model_result.to_sql(
                         "model_results", con=engine, if_exists="append"
                     )
