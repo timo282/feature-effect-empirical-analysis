@@ -6,6 +6,8 @@ from sklearn.base import BaseEstimator
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 
+from feature_effect_empirical_analysis.mappings import suggested_hps_for_model
+
 
 def _objective(
     model: BaseEstimator,
@@ -16,25 +18,7 @@ def _objective(
     metric: str,
 ) -> float:
     if isinstance(model, RandomForestRegressor):
-        # using the values from https://www.jmlr.org/papers/v20/18-444.html
-        hyperparams = dict()
-        hyperparams["n_estimators"] = trial.suggest_int(
-            "n_estimators", 200, 1750
-        )
-        hyperparams["max_depth"] = trial.suggest_int("max_depth", 2, 30)
-        hyperparams["min_samples_split"] = trial.suggest_float(
-            "min_samples_split", 0.01, 0.5
-        )
-        # hyperparams["bootstrap"] = trial.suggest_categorical(
-        #     "bootstrap", [True, False]
-        # )
-        hyperparams["max_samples"] = trial.suggest_float(
-            "max_samples", 0.3, 0.975
-        )
-        hyperparams["max_features"] = trial.suggest_float(
-            "max_features", 0.035, 0.7
-        )
-
+        hyperparams = suggested_hps_for_model(model, trial)
         model.set_params(**hyperparams, random_state=42)
     else:
         raise NotImplementedError("Base estimator not implemented yet")
