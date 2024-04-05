@@ -7,12 +7,20 @@ import numpy as np
 import pandas as pd
 from sqlalchemy import create_engine
 from sklearn.base import BaseEstimator
+from sklearn.metrics import mean_squared_error
 
-from feature_effect_empirical_analysis.data_generation import generate_data
+from feature_effect_empirical_analysis.data_generation import (
+    generate_data,
+    Groundtruth,
+)
 from feature_effect_empirical_analysis.model_training import train_model
 from feature_effect_empirical_analysis.model_eval import eval_model
 from feature_effect_empirical_analysis.mappings import (
     map_modelname_to_estimator,
+)
+from feature_effect_empirical_analysis.feature_effects import (
+    compute_pdps,
+    compare_pdps,
 )
 
 sim_config = ConfigParser()
@@ -29,7 +37,9 @@ def simulate(
     np.random.seed(42)
     model_folder = config.get("storage", "models")
     model_results_storage = config.get("storage", "model_results")
-    engine = create_engine(f"sqlite://{model_results_storage}")
+    pdp_results_storage = config.get("storage", "pdp_results")
+    engine_model_results = create_engine(f"sqlite://{model_results_storage}")
+    engine_pdp_results = create_engine(f"sqlite://{pdp_results_storage}")
     n_trials = config.getint("simulation_metadata", "n_tuning_trials")
     cv = config.getint("simulation_metadata", "n_tuning_folds")
     metric = config.get("simulation_metadata", "tuning_metric")
@@ -46,6 +56,10 @@ def simulate(
                     noise_sd=noise_sd,
                     seed=i,
                 )
+
+                # calulate pdps of groundtruth
+                groundtruth = Groundtruth()
+                pdp_groundtruth = compute_pdps(groundtruth, X_train, config)
 
                 for model in models:
                     model_str = model.__class__.__name__
@@ -96,7 +110,40 @@ def simulate(
 
                     # save model results
                     df_model_result.to_sql(
-                        "model_results", con=engine, if_exists="append"
+                        "model_results",
+                        con=engine_model_results,
+                        if_exists="append",
+                    )
+
+                    # calculate pdps
+                    pdp = compute_pdps(model, X_train, config)
+
+                    # compare pdps to groundtruth
+                    pdp_comparison = compare_pdps(
+                        pdp_groundtruth, pdp, mean_squared_error
+                    )
+
+                    df_pdp_result = pd.concat(
+                        (
+                            pd.DataFrame(
+                                {
+                                    "model_id": [model_name],
+                                    "model": [model_str],
+                                    "simulation": [i + 1],
+                                    "n_train": [n_train],
+                                    "noise_sd": [noise_sd],
+                                }
+                            ),
+                            pdp_comparison,
+                        ),
+                        axis=1,
+                    )
+
+                    # save model results
+                    df_pdp_result.to_sql(
+                        "pdp_results",
+                        con=engine_pdp_results,
+                        if_exists="append",
                     )
 
 
