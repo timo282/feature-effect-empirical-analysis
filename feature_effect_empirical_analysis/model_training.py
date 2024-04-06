@@ -3,7 +3,6 @@ import uuid
 import numpy as np
 import optuna
 from sklearn.base import BaseEstimator
-from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import cross_val_score
 
 from feature_effect_empirical_analysis.mappings import suggested_hps_for_model
@@ -17,11 +16,8 @@ def _objective(
     cv: int,
     metric: str,
 ) -> float:
-    if isinstance(model, RandomForestRegressor):
-        hyperparams = suggested_hps_for_model(model, trial)
-        model.set_params(**hyperparams, random_state=42)
-    else:
-        raise NotImplementedError("Base estimator not implemented yet")
+    hyperparams = suggested_hps_for_model(model, trial)
+    model.set_params(**hyperparams, random_state=42)
 
     score = cross_val_score(
         model, X_train, y_train, cv=cv, scoring=metric, n_jobs=-1
