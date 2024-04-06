@@ -45,6 +45,7 @@ def simulate(
     metric = config.get("simulation_metadata", "tuning_metric")
     direction = config.get("simulation_metadata", "tuning_direction")
     tuning_studies_folder = config.get("storage", "tuning_studies_folder")
+    n_test = config.getint("simulation_metadata", "n_test")
 
     for i in range(n_sim):
         for n_train in n_trains:
@@ -52,7 +53,7 @@ def simulate(
                 # generate data
                 X_train, y_train, X_test, y_test = generate_data(
                     n_train=n_train,
-                    n_test=config.getint("simulation_metadata", "n_test"),
+                    n_test=n_test,
                     noise_sd=noise_sd,
                     seed=i,
                 )

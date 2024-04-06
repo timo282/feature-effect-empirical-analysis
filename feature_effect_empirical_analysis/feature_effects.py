@@ -38,7 +38,7 @@ def compute_pdps(
 def compare_pdps(
     pdp_groundtruth: List[Dict], pdp_model: List[Dict], metric: Callable
 ) -> pd.DataFrame:
-    pdp_comparison = {}
+    pdp_comparison = {"metric": metric.__name__}
     for i, pdp_model_feature in enumerate(pdp_model):
         pdp_groundtruth_feature = pdp_groundtruth[i]
         if pdp_groundtruth_feature["feature"] != pdp_model_feature["feature"]:
