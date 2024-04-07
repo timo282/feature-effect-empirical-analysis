@@ -1,17 +1,20 @@
 from sklearn.base import BaseEstimator
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.svm import SVR
 from xgboost import XGBRegressor
 import optuna
 
 
 def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
     if model_name == "RandomForestRegressor":
-        return RandomForestRegressor()
+        return RandomForestRegressor(random_state=42)
     if model_name == "XGBRegressor":
-        return XGBRegressor()
+        return XGBRegressor(random_state=42)
     if model_name == "DecisionTreeRegressor":
-        return DecisionTreeRegressor()
+        return DecisionTreeRegressor(random_state=42)
+    if model_name == "SVM-RBF":
+        return SVR(kernel="rbf")
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -24,6 +27,8 @@ def suggested_hps_for_model(
         return _suggest_hps_xgboost(trial)
     if isinstance(model, DecisionTreeRegressor):
         return _suggest_hps_tree(trial)
+    if isinstance(model, SVR):
+        return _suggest_hps_svm(trial)
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -69,11 +74,22 @@ def _suggest_hps_xgboost(trial: optuna.trial.Trial):
 
 
 def _suggest_hps_tree(trial: optuna.trial.Trial):
+    # using the values from https://www.jmlr.org/papers/v20/18-444.html
     hyperparams = {
         "max_depth": trial.suggest_int("max_depth", 12, 27),
         "min_samples_split": trial.suggest_int("min_samples_split", 5, 50),
         "min_samples_leaf": trial.suggest_int("min_samples_leaf", 4, 42),
         "ccp_alpha": trial.suggest_float("ccp_alpha", 0, 0.008),
+    }
+
+    return hyperparams
+
+
+def _suggest_hps_svm(trial: optuna.trial.Trial):
+    # using the values from https://www.jmlr.org/papers/v20/18-444.html
+    hyperparams = {
+        "C": trial.suggest_float("C", 0.002, 920, log=True),
+        "gamma": trial.suggest_float("gamma", 0.003, 18, log=True),
     }
 
     return hyperparams
