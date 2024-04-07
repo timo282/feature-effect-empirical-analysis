@@ -16,6 +16,7 @@ pandas = "^2.2.1"
 seaborn = "^0.13.2"
 nbconvert = "^7.16.3"
 xgboost = "^2.0.3"
+pygam = "^0.9.1"
 
 [tool.black]
 line-length = 79

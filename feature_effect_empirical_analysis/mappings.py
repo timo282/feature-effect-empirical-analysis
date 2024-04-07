@@ -1,8 +1,10 @@
-from sklearn.base import BaseEstimator
+from typing_extensions import List, Dict
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
 from sklearn.linear_model import ElasticNet
+from sklearn.base import BaseEstimator, RegressorMixin
+from pygam import LinearGAM, s, l, te
 from xgboost import XGBRegressor
 import optuna
 
@@ -18,6 +20,8 @@ def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
         return SVR(kernel="rbf")
     if model_name == "ElasticNet":
         return ElasticNet(random_state=42, max_iter=10000)
+    if model_name == "GAM":
+        return GAM(terms={"te": [(0, 1)], "s": [2], "l": [3, 4]})
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -34,6 +38,8 @@ def suggested_hps_for_model(
         return _suggest_hps_svm(trial)
     if isinstance(model, ElasticNet):
         return _suggest_hps_elasticnet(trial)
+    if isinstance(model, GAM):
+        return _suggest_hps_gam(trial)
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -108,3 +114,54 @@ def _suggest_hps_elasticnet(trial: optuna.trial.Trial):
     }
 
     return hyperparams
+
+
+def _suggest_hps_gam(trial: optuna.trial.Trial):
+    hyperparams = {
+        "n_splines": trial.suggest_int("n_splines", 5, 50),
+        "lam": trial.suggest_float("lam", 1e-3, 1e3, log=True),
+    }
+
+    return hyperparams
+
+
+class GAM(BaseEstimator, RegressorMixin):
+    """
+    GAM compatible with sklearn API.
+
+    Example:
+    ```
+    gam = GAM(terms={"s": [0, 1], "l": [2, 3], "te": [(4, 5)]})
+    gam.fit(X_train, y_train)
+    gam.predict(X_test)
+    ```
+    """
+
+    def __init__(
+        self, terms: Dict[str, List], n_splines: int = 25, lam: float = 0.6
+    ):
+        self.n_splines = n_splines
+        self.lam = lam
+        self.terms = self._parse_terms(terms)
+        self.model = LinearGAM(self.terms)
+
+    def _parse_terms(self, terms):
+        gam_term = None
+        for feature in terms["s"]:
+            term = s(feature, n_splines=self.n_splines, lam=self.lam)
+            gam_term = term if gam_term is None else gam_term + term
+        for feature in terms["l"]:
+            term = l(feature)
+            gam_term = term if gam_term is None else gam_term + term
+        for features in terms["te"]:
+            term = te(*features, lam=self.lam)
+            gam_term = term if gam_term is None else gam_term + term
+
+        return gam_term
+
+    def fit(self, X, y):
+        self.model.fit(X, y)
+        return self
+
+    def predict(self, X):
+        return self.model.predict(X)
