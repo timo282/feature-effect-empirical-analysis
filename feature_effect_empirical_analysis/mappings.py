@@ -2,6 +2,7 @@ from sklearn.base import BaseEstimator
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
+from sklearn.linear_model import ElasticNet
 from xgboost import XGBRegressor
 import optuna
 
@@ -15,6 +16,8 @@ def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
         return DecisionTreeRegressor(random_state=42)
     if model_name == "SVM-RBF":
         return SVR(kernel="rbf")
+    if model_name == "ElasticNet":
+        return ElasticNet(random_state=42, max_iter=10000)
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -29,6 +32,8 @@ def suggested_hps_for_model(
         return _suggest_hps_tree(trial)
     if isinstance(model, SVR):
         return _suggest_hps_svm(trial)
+    if isinstance(model, ElasticNet):
+        return _suggest_hps_elasticnet(trial)
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -90,6 +95,16 @@ def _suggest_hps_svm(trial: optuna.trial.Trial):
     hyperparams = {
         "C": trial.suggest_float("C", 0.002, 920, log=True),
         "gamma": trial.suggest_float("gamma", 0.003, 18, log=True),
+    }
+
+    return hyperparams
+
+
+def _suggest_hps_elasticnet(trial: optuna.trial.Trial):
+    # using the values from https://www.jmlr.org/papers/v20/18-444.html
+    hyperparams = {
+        "alpha": trial.suggest_float("alpha", 0.001, 0.147, log=True),  # lambd
+        "l1_ratio": trial.suggest_float("l1_ratio", 0.009, 0.981),  # alpha
     }
 
     return hyperparams
