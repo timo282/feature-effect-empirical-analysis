@@ -33,3 +33,9 @@ def get_boxplot_style():
     )
 
     return style
+
+
+def get_feature_effect_plot_style():
+    style = dict(linewidth=2, marker="+", markeredgewidth=1, markersize=5)
+
+    return style

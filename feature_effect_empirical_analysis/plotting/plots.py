@@ -1,12 +1,17 @@
 from typing_extensions import Literal, List
 import math
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib import transforms
 import seaborn as sns
+from sklearn.inspection import partial_dependence
+from sklearn.base import BaseEstimator
 
 from feature_effect_empirical_analysis.plotting.utils import (
     set_style,
     get_boxplot_style,
+    get_feature_effect_plot_style,
 )
 
 
@@ -48,7 +53,7 @@ def boxplot_feature_effect_results(
 ) -> plt.Figure:
     set_style()
     fig = plt.figure(
-        figsize=(min(6 * len(features), 18), math.ceil(len(features) / 3) * 6),
+        figsize=(min(6 * len(features), 18), math.ceil(len(features) / 3) * 5),
         dpi=100,
     )
     fig.suptitle(
@@ -84,5 +89,63 @@ def boxplot_feature_effect_results(
         title="Learner", bbox_to_anchor=(1.05, 1), loc="upper left"
     ).set_visible(True)
     fig.tight_layout()
+
+    return fig
+
+
+def plot_pdp_comparison(
+    model: BaseEstimator,
+    groundtruth: BaseEstimator,
+    X_train: np.ndarray,
+    features: List[Literal["x_1", "x_2", "x_3", "x_4", "x_5"]],
+) -> plt.Figure:
+    set_style()
+    feature_indices = [int(feature.split("_")[1]) - 1 for feature in features]
+    fig, axes = plt.subplots(
+        1, len(features), figsize=(6 * len(features), 6), dpi=100, sharey=True
+    )
+    fig.suptitle(
+        "Partial dependence comparison", fontsize=16, fontweight="bold"
+    )
+    for i in range(len(features)):
+        feature, feature_index = features[i], feature_indices[i]
+        pd_model = partial_dependence(
+            model,
+            X_train,
+            features=[feature_index],
+            kind="average",
+            percentiles=(0, 1),
+            grid_resolution=100,
+        )
+        pd_gt = partial_dependence(
+            groundtruth,
+            X_train,
+            features=[feature_index],
+            kind="average",
+            percentiles=(0, 1),
+            grid_resolution=100,
+        )
+        axes[i].plot(
+            pd_model["grid_values"][0],
+            pd_model["average"][0],
+            label=model.__class__.__name__,
+            **get_feature_effect_plot_style(),
+        )
+        axes[i].plot(
+            pd_gt["grid_values"][0],
+            pd_gt["average"][0],
+            label="Groundtruth",
+            **get_feature_effect_plot_style(),
+        )
+        axes[i].set_xlabel(feature)
+        axes[i].set_ylabel("Partial dependence")
+        deciles = np.percentile(X_train[:, 0], np.arange(10, 101, 10))
+        trans = transforms.blended_transform_factory(
+            axes[i].transData, axes[i].transAxes
+        )
+        axes[i].vlines(
+            deciles, 0, 0.045, transform=trans, color="k", linewidth=1
+        )
+        axes[i].legend()
 
     return fig
