@@ -19,7 +19,7 @@ def boxplot_model_results(
     metric: Literal["mse", "mae", "r2"], df: pd.DataFrame
 ) -> plt.Figure:
     set_style()
-    fig, ax = plt.subplots(1, 2, figsize=(12, 6), dpi=100, sharey=True)
+    fig, ax = plt.subplots(1, 2, figsize=(12, 6), dpi=300, sharey=True)
     fig.suptitle("Model evaluation", fontsize=16, fontweight="bold")
     ax[0].set_title(f"{metric} on train set")
     sns.boxplot(
@@ -54,7 +54,7 @@ def boxplot_feature_effect_results(
     set_style()
     fig = plt.figure(
         figsize=(min(6 * len(features), 18), math.ceil(len(features) / 3) * 5),
-        dpi=100,
+        dpi=300,
     )
     fig.suptitle(
         f"Feature effect evaluation {effect_type} with {df['metric'].iloc[0]}",
@@ -102,7 +102,7 @@ def plot_pdp_comparison(
     set_style()
     feature_indices = [int(feature.split("_")[1]) - 1 for feature in features]
     fig, axes = plt.subplots(
-        1, len(features), figsize=(6 * len(features), 6), dpi=100, sharey=True
+        1, len(features), figsize=(6 * len(features), 6), dpi=300, sharey=True
     )
     fig.suptitle(
         "Partial dependence comparison", fontsize=16, fontweight="bold"
