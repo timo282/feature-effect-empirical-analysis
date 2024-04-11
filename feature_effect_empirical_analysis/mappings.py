@@ -1,4 +1,4 @@
-from typing_extensions import List, Dict
+from typing_extensions import List, Tuple
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
@@ -21,7 +21,7 @@ def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
     if model_name == "ElasticNet":
         return ElasticNet(random_state=42, max_iter=10000)
     if model_name == "GAM":
-        return GAM(terms={"te": [(0, 1)], "s": [2], "l": [3, 4]})
+        return GAM(te_features=[(0, 1)], s_features=[2], l_features=[3, 4])
     raise NotImplementedError("Base estimator not implemented yet")
 
 
@@ -138,29 +138,47 @@ class GAM(BaseEstimator, RegressorMixin):
     """
 
     def __init__(
-        self, terms: Dict[str, List], n_splines: int = 25, lam: float = 0.6
+        self,
+        s_features: List[int] | None = None,
+        l_features: List[int] | None = None,
+        te_features: List[Tuple[int]] | None = None,
+        n_splines: int = 25,
+        lam: float = 0.6,
     ):
         self.n_splines = n_splines
         self.lam = lam
-        self.terms = self._parse_terms(terms)
+        self.s_features = s_features
+        self.l_features = l_features
+        self.te_features = te_features
+        self.terms = self._parse_terms(
+            self.s_features, self.l_features, self.te_features
+        )
         self.model = LinearGAM(self.terms)
+        self._is_fitted__ = False
 
-    def _parse_terms(self, terms):
+    def __sklearn_is_fitted__(self):
+        return self._is_fitted__
+
+    def _parse_terms(self, s_features, l_features, te_features):
         gam_term = None
-        for feature in terms["s"]:
-            term = s(feature, n_splines=self.n_splines, lam=self.lam)
-            gam_term = term if gam_term is None else gam_term + term
-        for feature in terms["l"]:
-            term = l(feature)
-            gam_term = term if gam_term is None else gam_term + term
-        for features in terms["te"]:
-            term = te(*features, lam=self.lam)
-            gam_term = term if gam_term is None else gam_term + term
+        if s_features is not None:
+            for feature in s_features:
+                term = s(feature, n_splines=self.n_splines, lam=self.lam)
+                gam_term = term if gam_term is None else gam_term + term
+        if l_features is not None:
+            for feature in l_features:
+                term = l(feature)
+                gam_term = term if gam_term is None else gam_term + term
+        if te_features is not None:
+            for features in te_features:
+                term = te(*features, lam=self.lam)
+                gam_term = term if gam_term is None else gam_term + term
 
         return gam_term
 
     def fit(self, X, y):
         self.model.fit(X, y)
+        self._is_fitted__ = True
         return self
 
     def predict(self, X):
