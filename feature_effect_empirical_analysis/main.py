@@ -1,5 +1,7 @@
 from configparser import ConfigParser
 from pathlib import Path
+import os
+import shutil
 from datetime import datetime
 from typing_extensions import List
 from joblib import dump
@@ -83,9 +85,12 @@ def simulate(
                     )
 
                     # save model
+                    os.makedirs(model_folder, exist_ok=True)
                     dump(
                         model,
-                        Path(f"{model_folder}/{model_name}.joblib"),
+                        Path(os.getcwd())
+                        / model_folder
+                        / f"{model_name}.joblib",
                     )
 
                     # evaluate model
@@ -110,6 +115,7 @@ def simulate(
                     )
 
                     # save model results
+                    os.makedirs("results", exist_ok=True)
                     df_model_result.to_sql(
                         "model_results",
                         con=engine_model_results,
@@ -162,6 +168,18 @@ if __name__ == "__main__":
     models_config = [
         map_modelname_to_estimator(model_name) for model_name in model_names
     ]
+
+    simulation_name = sim_config.get("storage", "simulation_name")
+
+    base_dir = (
+        Path(sim_config.get("storage", "simulations_dir")) / simulation_name
+    )
+    if not os.path.exists(base_dir):
+        os.mkdir(base_dir)
+        shutil.copy2("config.ini", base_dir / f"config_{simulation_name}")
+        os.chdir(base_dir)
+    else:
+        raise ValueError(f"Simulation {base_dir} already exists.")
 
     simulate(
         models=models_config,

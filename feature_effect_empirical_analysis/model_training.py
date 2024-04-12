@@ -1,4 +1,6 @@
 from typing_extensions import Literal
+import os
+from pathlib import Path
 import uuid
 import numpy as np
 import optuna
@@ -39,9 +41,10 @@ def optimize(
 ) -> optuna.study.Study:
     model_str = model.__class__.__name__
     sampler = optuna.samplers.TPESampler(seed=42)
+    os.makedirs(Path(os.getcwd()) / tuning_studies_folder, exist_ok=True)
     study = optuna.create_study(
         sampler=sampler,
-        storage=f"sqlite://{tuning_studies_folder}/{model_str}.db",
+        storage=f"sqlite:///{tuning_studies_folder}/{model_str}.db",
         study_name=f"{model_name}_{uuid.uuid4().hex}",
         direction=direction,
         load_if_exists=False,
