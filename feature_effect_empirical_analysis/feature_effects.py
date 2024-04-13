@@ -1,13 +1,18 @@
 from configparser import ConfigParser
+import warnings
 from typing_extensions import List, Dict, Callable
 import pandas as pd
 import numpy as np
 from sklearn.inspection import partial_dependence
 from sklearn.base import BaseEstimator
+from PyALE import ale
 
 
 def compute_pdps(
-    model: BaseEstimator, X_train: np.ndarray, config: ConfigParser
+    model: BaseEstimator,
+    X_train: np.ndarray,
+    feature_names: List[str],
+    config: ConfigParser,
 ) -> List[Dict]:
     pdp = []
     percentiles = (
@@ -15,46 +20,82 @@ def compute_pdps(
         float(config.get("pdp", "percentiles").split(",")[1]),
     )
     grid_resolution = config.getint("pdp", "grid_resolution")
-    for feature in range(X_train.shape[1]):
+    for feature, f_name in zip(range(X_train.shape[1]), feature_names):
         pdp_feature = partial_dependence(
-            model,
-            X_train,
-            [feature],
+            estimator=model,
+            X=X_train,
+            features=[feature],
             kind="average",
             percentiles=percentiles,
             grid_resolution=grid_resolution,
         )
         pdp.append(
             {
-                "feature": feature,
+                "feature": f_name,
                 "grid_values": pdp_feature["grid_values"][0],
-                "average": pdp_feature["average"][0],
+                "effect": pdp_feature["average"][0],
             }
         )
 
     return pdp
 
 
-def compare_pdps(
-    pdp_groundtruth: List[Dict], pdp_model: List[Dict], metric: Callable
-) -> pd.DataFrame:
-    pdp_comparison = {"metric": metric.__name__}
-    for i, pdp_model_feature in enumerate(pdp_model):
-        pdp_groundtruth_feature = pdp_groundtruth[i]
-        if pdp_groundtruth_feature["feature"] != pdp_model_feature["feature"]:
-            raise ValueError(
-                "Features in groundtruth and model PDPs do not match"
+def compute_ales(
+    model: BaseEstimator,
+    X_train: np.ndarray,
+    feature_names: List[str],
+    config: ConfigParser,
+) -> List[Dict]:
+    ales = []
+    grid_intervals = config.getint("ale", "grid_intervals")
+    X_train_df = pd.DataFrame(X_train, columns=feature_names)
+    for feature in X_train_df.columns:
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            ale_feature = ale(
+                X=X_train_df,
+                model=model,
+                feature=[feature],
+                grid_size=grid_intervals,
+                plot=False,
+                include_CI=False,
             )
-        if not np.array_equal(
-            pdp_groundtruth_feature["grid_values"],
-            pdp_model_feature["grid_values"],
-        ):
-            raise ValueError(
-                "Grid values in groundtruth and model PDPs do not match"
-            )
-        pdp_comparison[f"x_{pdp_model_feature['feature']+1}"] = metric(
-            pdp_groundtruth_feature["average"],
-            pdp_model_feature["average"],
+        ales.append(
+            {
+                "feature": feature,
+                "grid_values": ale_feature.index.values,
+                "effect": ale_feature["eff"].values,
+            }
         )
 
-    return pd.DataFrame(pdp_comparison, index=[0])
+    return ales
+
+
+def compare_effects(
+    effects_groundtruth: List[Dict],
+    effects_model: List[Dict],
+    metric: Callable,
+) -> pd.DataFrame:
+    comparison = {"metric": metric.__name__}
+    for i, effects_model_feature in enumerate(effects_model):
+        effects_groundtruth_feature = effects_groundtruth[i]
+        if (
+            effects_groundtruth_feature["feature"]
+            != effects_model_feature["feature"]
+        ):
+            raise ValueError(
+                "Features in groundtruth and model effects do not match"
+            )
+        if not np.array_equal(
+            effects_groundtruth_feature["grid_values"],
+            effects_model_feature["grid_values"],
+        ):
+            raise ValueError(
+                "Grid values in groundtruth and model effects do not match"
+            )
+        comparison[effects_model_feature['feature']] = metric(
+            effects_groundtruth_feature["effect"],
+            effects_model_feature["effect"],
+        )
+
+    return pd.DataFrame(comparison, index=[0])

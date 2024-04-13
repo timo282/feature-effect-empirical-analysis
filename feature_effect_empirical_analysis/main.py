@@ -22,7 +22,8 @@ from feature_effect_empirical_analysis.mappings import (
 )
 from feature_effect_empirical_analysis.feature_effects import (
     compute_pdps,
-    compare_pdps,
+    compute_ales,
+    compare_effects,
 )
 
 sim_config = ConfigParser()
@@ -39,9 +40,11 @@ def simulate(
     np.random.seed(42)
     model_folder = config.get("storage", "models")
     model_results_storage = config.get("storage", "model_results")
-    pdp_results_storage = config.get("storage", "pdp_results")
+    effects_results_storage = config.get("storage", "effects_results")
     engine_model_results = create_engine(f"sqlite://{model_results_storage}")
-    engine_pdp_results = create_engine(f"sqlite://{pdp_results_storage}")
+    engine_effects_results = create_engine(
+        f"sqlite://{effects_results_storage}"
+    )
     n_trials = config.getint("simulation_metadata", "n_tuning_trials")
     cv = config.getint("simulation_metadata", "n_tuning_folds")
     metric = config.get("simulation_metadata", "tuning_metric")
@@ -62,7 +65,13 @@ def simulate(
 
                 # calulate pdps of groundtruth
                 groundtruth = Groundtruth()
-                pdp_groundtruth = compute_pdps(groundtruth, X_train, config)
+                feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
+                pdp_groundtruth = compute_pdps(
+                    groundtruth, X_train, feature_names, config
+                )
+                ale_groundtruth = compute_ales(
+                    groundtruth, X_train, feature_names, config
+                )
 
                 for model in models:
                     model_str = model.__class__.__name__
@@ -123,10 +132,10 @@ def simulate(
                     )
 
                     # calculate pdps
-                    pdp = compute_pdps(model, X_train, config)
+                    pdp = compute_pdps(model, X_train, feature_names, config)
 
                     # compare pdps to groundtruth
-                    pdp_comparison = compare_pdps(
+                    pdp_comparison = compare_effects(
                         pdp_groundtruth, pdp, mean_squared_error
                     )
 
@@ -149,7 +158,38 @@ def simulate(
                     # save model results
                     df_pdp_result.to_sql(
                         "pdp_results",
-                        con=engine_pdp_results,
+                        con=engine_effects_results,
+                        if_exists="append",
+                    )
+
+                    # calculate ales
+                    ale = compute_ales(model, X_train, feature_names, config)
+
+                    # compare pdps to groundtruth
+                    ale_comparison = compare_effects(
+                        ale_groundtruth, ale, mean_squared_error
+                    )
+
+                    df_ale_result = pd.concat(
+                        (
+                            pd.DataFrame(
+                                {
+                                    "model_id": [model_name],
+                                    "model": [model_str],
+                                    "simulation": [i + 1],
+                                    "n_train": [n_train],
+                                    "noise_sd": [noise_sd],
+                                }
+                            ),
+                            ale_comparison,
+                        ),
+                        axis=1,
+                    )
+
+                    # save model results
+                    df_ale_result.to_sql(
+                        "ale_results",
+                        con=engine_effects_results,
                         if_exists="append",
                     )
 

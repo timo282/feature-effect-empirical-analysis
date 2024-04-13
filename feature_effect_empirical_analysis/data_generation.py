@@ -1,4 +1,5 @@
 from numbers import Integral, Real
+import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 from sklearn.base import BaseEstimator
@@ -59,6 +60,8 @@ class Groundtruth(BaseEstimator):
         y_pred : ndarray of shape (n_samples,)
             The target values.
         """
+        if type(X) == pd.DataFrame:
+            X = X.values
         return (
             10 * np.sin(np.pi * X[:, 0] * X[:, 1])
             + 20 * (X[:, 2] - 0.5) ** 2
