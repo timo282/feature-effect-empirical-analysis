@@ -60,14 +60,9 @@ class Groundtruth(BaseEstimator):
         y_pred : ndarray of shape (n_samples,)
             The target values.
         """
-        if type(X) == pd.DataFrame:
+        if isinstance(X, pd.DataFrame):
             X = X.values
-        return (
-            10 * np.sin(np.pi * X[:, 0] * X[:, 1])
-            + 20 * (X[:, 2] - 0.5) ** 2
-            + 10 * X[:, 3]
-            + 5 * X[:, 4]
-        )
+        return 10 * np.sin(np.pi * X[:, 0] * X[:, 1]) + 20 * (X[:, 2] - 0.5) ** 2 + 10 * X[:, 3] + 5 * X[:, 4]
 
 
 @validate_params(
@@ -79,9 +74,7 @@ class Groundtruth(BaseEstimator):
     },
     prefer_skip_nested_validation=True,
 )
-def _make_friedman1(
-    n_samples=100, n_features=10, *, noise=0.0, random_state=None
-):
+def _make_friedman1(n_samples=100, n_features=10, *, noise=0.0, random_state=None):
     """Reimplementation of sklearn.datasets.make_friedman1 to
     generate the "Friedman #1" regression problem.
 
@@ -131,9 +124,7 @@ def _make_friedman1(
     groundtruth = Groundtruth()
 
     X = generator.uniform(size=(n_samples, n_features))
-    y = groundtruth.predict(X) + noise * generator.standard_normal(
-        size=(n_samples)
-    )
+    y = groundtruth.predict(X) + noise * generator.standard_normal(size=(n_samples))
 
     return X, y
 
@@ -172,8 +163,6 @@ def generate_data(
         noise=noise_sd,
         random_state=seed,
     )
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=n_test, random_state=42
-    )
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=n_test, random_state=42)
 
     return X_train, y_train, X_test, y_test

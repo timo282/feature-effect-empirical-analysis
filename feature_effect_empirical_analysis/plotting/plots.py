@@ -15,9 +15,7 @@ from feature_effect_empirical_analysis.plotting.utils import (
 )
 
 
-def boxplot_model_results(
-    metric: Literal["mse", "mae", "r2"], df: pd.DataFrame
-) -> plt.Figure:
+def boxplot_model_results(metric: Literal["mse", "mae", "r2"], df: pd.DataFrame) -> plt.Figure:
     set_style()
     fig, ax = plt.subplots(1, 2, figsize=(12, 6), dpi=300, sharey=True)
     fig.suptitle("Model evaluation", fontsize=16, fontweight="bold")
@@ -85,9 +83,7 @@ def boxplot_feature_effect_results(
             **get_boxplot_style(),
         )
         plt.legend().set_visible(False)
-    plt.legend(
-        title="Learner", bbox_to_anchor=(1.05, 1), loc="upper left"
-    ).set_visible(True)
+    plt.legend(title="Learner", bbox_to_anchor=(1.05, 1), loc="upper left").set_visible(True)
     fig.tight_layout()
 
     return fig
@@ -101,12 +97,8 @@ def plot_pdp_comparison(
 ) -> plt.Figure:
     set_style()
     feature_indices = [int(feature.split("_")[1]) - 1 for feature in features]
-    fig, axes = plt.subplots(
-        1, len(features), figsize=(6 * len(features), 6), dpi=300, sharey=True
-    )
-    fig.suptitle(
-        "Partial dependence comparison", fontsize=16, fontweight="bold"
-    )
+    fig, axes = plt.subplots(1, len(features), figsize=(6 * len(features), 6), dpi=300, sharey=True)
+    fig.suptitle("Partial dependence comparison", fontsize=16, fontweight="bold")
     for i in range(len(features)):
         feature, feature_index = features[i], feature_indices[i]
         pd_model = partial_dependence(
@@ -140,12 +132,8 @@ def plot_pdp_comparison(
         axes[i].set_xlabel(feature)
         axes[i].set_ylabel("Partial dependence")
         deciles = np.percentile(X_train[:, 0], np.arange(10, 101, 10))
-        trans = transforms.blended_transform_factory(
-            axes[i].transData, axes[i].transAxes
-        )
-        axes[i].vlines(
-            deciles, 0, 0.045, transform=trans, color="k", linewidth=1
-        )
+        trans = transforms.blended_transform_factory(axes[i].transData, axes[i].transAxes)
+        axes[i].vlines(deciles, 0, 0.045, transform=trans, color="k", linewidth=1)
         axes[i].legend()
 
     return fig

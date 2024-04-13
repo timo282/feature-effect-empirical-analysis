@@ -42,9 +42,7 @@ def simulate(
     model_results_storage = config.get("storage", "model_results")
     effects_results_storage = config.get("storage", "effects_results")
     engine_model_results = create_engine(f"sqlite://{model_results_storage}")
-    engine_effects_results = create_engine(
-        f"sqlite://{effects_results_storage}"
-    )
+    engine_effects_results = create_engine(f"sqlite://{effects_results_storage}")
     n_trials = config.getint("simulation_metadata", "n_tuning_trials")
     cv = config.getint("simulation_metadata", "n_tuning_folds")
     metric = config.get("simulation_metadata", "tuning_metric")
@@ -66,19 +64,13 @@ def simulate(
                 # calulate pdps of groundtruth
                 groundtruth = Groundtruth()
                 feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
-                pdp_groundtruth = compute_pdps(
-                    groundtruth, X_train, feature_names, config
-                )
-                ale_groundtruth = compute_ales(
-                    groundtruth, X_train, feature_names, config
-                )
+                pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
+                ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
 
                 for model in models:
                     model_str = model.__class__.__name__
                     date = datetime.now().strftime("%Y%m%d")
-                    model_name = (
-                        f"{model_str}_{date}_{i+1}_{n_train}_{noise_sd}"
-                    )
+                    model_name = f"{model_str}_{date}_{i+1}_{n_train}_{noise_sd}"
 
                     # train and tune model
                     model = train_model(
@@ -97,15 +89,11 @@ def simulate(
                     os.makedirs(model_folder, exist_ok=True)
                     dump(
                         model,
-                        Path(os.getcwd())
-                        / model_folder
-                        / f"{model_name}.joblib",
+                        Path(os.getcwd()) / model_folder / f"{model_name}.joblib",
                     )
 
                     # evaluate model
-                    model_results = eval_model(
-                        model, X_train, y_train, X_test, y_test
-                    )
+                    model_results = eval_model(model, X_train, y_train, X_test, y_test)
 
                     df_model_result = pd.DataFrame(
                         {
@@ -135,9 +123,7 @@ def simulate(
                     pdp = compute_pdps(model, X_train, feature_names, config)
 
                     # compare pdps to groundtruth
-                    pdp_comparison = compare_effects(
-                        pdp_groundtruth, pdp, mean_squared_error
-                    )
+                    pdp_comparison = compare_effects(pdp_groundtruth, pdp, mean_squared_error)
 
                     df_pdp_result = pd.concat(
                         (
@@ -166,9 +152,7 @@ def simulate(
                     ale = compute_ales(model, X_train, feature_names, config)
 
                     # compare pdps to groundtruth
-                    ale_comparison = compare_effects(
-                        ale_groundtruth, ale, mean_squared_error
-                    )
+                    ale_comparison = compare_effects(ale_groundtruth, ale, mean_squared_error)
 
                     df_ale_result = pd.concat(
                         (
@@ -197,23 +181,13 @@ def simulate(
 if __name__ == "__main__":
     model_names = sim_config.get("simulation_params", "models").split(",")
     n_sim_config = sim_config.getint("simulation_params", "n_sim")
-    n_train_config = [
-        int(x)
-        for x in sim_config.get("simulation_params", "n_train").split(",")
-    ]
-    noise_sd_config = [
-        float(x)
-        for x in sim_config.get("simulation_params", "noise_sd").split(",")
-    ]
-    models_config = [
-        map_modelname_to_estimator(model_name) for model_name in model_names
-    ]
+    n_train_config = [int(x) for x in sim_config.get("simulation_params", "n_train").split(",")]
+    noise_sd_config = [float(x) for x in sim_config.get("simulation_params", "noise_sd").split(",")]
+    models_config = [map_modelname_to_estimator(model_name) for model_name in model_names]
 
     simulation_name = sim_config.get("storage", "simulation_name")
 
-    base_dir = (
-        Path(sim_config.get("storage", "simulations_dir")) / simulation_name
-    )
+    base_dir = Path(sim_config.get("storage", "simulations_dir")) / simulation_name
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
         shutil.copy2("config.ini", base_dir / f"config_{simulation_name}")

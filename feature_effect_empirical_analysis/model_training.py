@@ -21,9 +21,7 @@ def _objective(
     hyperparams = suggested_hps_for_model(model, trial)
     model.set_params(**hyperparams)
 
-    score = cross_val_score(
-        model, X_train, y_train, cv=cv, scoring=metric, n_jobs=-1
-    ).mean()
+    score = cross_val_score(model, X_train, y_train, cv=cv, scoring=metric, n_jobs=-1).mean()
 
     return score
 

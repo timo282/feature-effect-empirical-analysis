@@ -79,21 +79,14 @@ def compare_effects(
     comparison = {"metric": metric.__name__}
     for i, effects_model_feature in enumerate(effects_model):
         effects_groundtruth_feature = effects_groundtruth[i]
-        if (
-            effects_groundtruth_feature["feature"]
-            != effects_model_feature["feature"]
-        ):
-            raise ValueError(
-                "Features in groundtruth and model effects do not match"
-            )
+        if effects_groundtruth_feature["feature"] != effects_model_feature["feature"]:
+            raise ValueError("Features in groundtruth and model effects do not match")
         if not np.array_equal(
             effects_groundtruth_feature["grid_values"],
             effects_model_feature["grid_values"],
         ):
-            raise ValueError(
-                "Grid values in groundtruth and model effects do not match"
-            )
-        comparison[effects_model_feature['feature']] = metric(
+            raise ValueError("Grid values in groundtruth and model effects do not match")
+        comparison[effects_model_feature["feature"]] = metric(
             effects_groundtruth_feature["effect"],
             effects_model_feature["effect"],
         )

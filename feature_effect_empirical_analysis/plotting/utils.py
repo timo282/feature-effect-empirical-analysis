@@ -26,9 +26,7 @@ def get_boxplot_style():
         whiskerprops=dict(color="black"),  # Whisker properties
         capprops=dict(color="black"),  # Cap properties
         medianprops=dict(color="black", linewidth=1.5),  # Median properties
-        flierprops=dict(
-            marker="o", markeredgecolor="black", markersize=5, linestyle="none"
-        ),
+        flierprops=dict(marker="o", markeredgecolor="black", markersize=5, linestyle="none"),
         palette="Set2",
     )
 
