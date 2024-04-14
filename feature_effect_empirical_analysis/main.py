@@ -190,7 +190,7 @@ if __name__ == "__main__":
     base_dir = Path(sim_config.get("storage", "simulations_dir")) / simulation_name
     if not os.path.exists(base_dir):
         os.mkdir(base_dir)
-        shutil.copy2("config.ini", base_dir / f"config_{simulation_name}")
+        shutil.copy2("config.ini", base_dir / f"config_{simulation_name}.ini")
         os.chdir(base_dir)
     else:
         raise ValueError(f"Simulation {base_dir} already exists.")
