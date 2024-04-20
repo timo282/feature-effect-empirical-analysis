@@ -49,7 +49,7 @@ def simulate(
     direction = config.get("simulation_metadata", "tuning_direction")
     tuning_studies_folder = config.get("storage", "tuning_studies_folder")
     n_test = config.getint("simulation_metadata", "n_test")
-    groundtruth_feature_effect = config.get("simulation_metadata", "groundtruth_feature_effect")
+    groundtruth_feature_effect = config.get("simulation_metadata", "groundtruth_feature_effects")
 
     for i in range(n_sim):
         for n_train in n_trains:
@@ -67,14 +67,21 @@ def simulate(
                 feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
                 if groundtruth_feature_effect == "theoretical":
                     # ugly workaround to get the grid values
-                    grid = compute_pdps(groundtruth, X_train, feature_names, config)[0]["grid_values"]
+                    grid = [
+                        compute_pdps(groundtruth, X_train, feature_names, config)[i]["grid_values"]
+                        for i in range(len(feature_names))
+                    ]
 
                     pdp_groundtruth_functions = [
                         groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform")
                         for x in feature_names
                     ]
                     pdp_groundtruth = [
-                        {"feature": feature_names[i], "grid_values": grid, "pdp": pdp_groundtruth_functions[i](grid)}
+                        {
+                            "feature": feature_names[i],
+                            "grid_values": grid[i],
+                            "effect": [pdp_groundtruth_functions[i](p) for p in grid[i]],
+                        }
                         for i in range(len(feature_names))
                     ]
 
