@@ -96,6 +96,7 @@ def plot_effect_comparison(
     X_train: np.ndarray,
     effect: Literal["PDP", "ALE"],
     features: List[Literal["x_1", "x_2", "x_3", "x_4", "x_5"]],
+    groundtruth_feature_effect: Literal["theoretical", "empirical"],
     config: ConfigParser,
 ) -> plt.Figure:
     set_style()
@@ -106,10 +107,28 @@ def plot_effect_comparison(
         effect_func = compute_ales
         title = "Accumulated local effects"
     effects = effect_func(model, X_train, features, config)
-    effects_gt = effect_func(groundtruth, X_train, features, config)
+    if groundtruth_feature_effect == "theoretical":
+        grid = [
+            effects[i]["grid_values"]
+            for i in range(len(features))
+        ]
+        pdp_groundtruth_functions = [
+            groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform")
+            for x in features
+        ]
+        effects_gt = [
+            {
+                "feature": features[i],
+                "grid_values": grid[i],
+                "effect": [pdp_groundtruth_functions[i](p) for p in grid[i]],
+            }
+            for i in range(len(features))
+        ]
+    elif groundtruth_feature_effect == "empirical":
+        effects_gt = effect_func(groundtruth, X_train, features, config)
     fig, axes = plt.subplots(1, len(features), figsize=(6 * len(features), 6), dpi=300, sharey=True)
     fig.suptitle(f"{title} comparison", fontsize=16, fontweight="bold")
-    for i in range(len(features)):
+    for i in range(len(features)):  # pylint: disable=consider-using-enumerate
         if effects[i]["feature"] != features[i]:
             raise ValueError(f"Feature {features[i]} does not match {effects[i]['feature']}")
         axes[i].plot(
