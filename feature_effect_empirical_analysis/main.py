@@ -1,7 +1,6 @@
 from configparser import ConfigParser
 from pathlib import Path
 import os
-import shutil
 from datetime import datetime
 from typing_extensions import List
 from joblib import dump
@@ -17,8 +16,10 @@ from feature_effect_empirical_analysis.data_generation import (
 )
 from feature_effect_empirical_analysis.model_training import train_model
 from feature_effect_empirical_analysis.model_eval import eval_model
-from feature_effect_empirical_analysis.mappings import (
-    map_modelname_to_estimator,
+from feature_effect_empirical_analysis.utils import (
+    parse_sim_params,
+    create_and_set_sim_dir,
+    parse_storage_and_sim_metadata,
 )
 from feature_effect_empirical_analysis.feature_effects import (
     compute_pdps,
@@ -38,18 +39,9 @@ def simulate(
     config: ConfigParser,
 ):
     np.random.seed(42)
-    model_folder = config.get("storage", "models")
-    model_results_storage = config.get("storage", "model_results")
-    effects_results_storage = config.get("storage", "effects_results")
-    engine_model_results = create_engine(f"sqlite://{model_results_storage}")
-    engine_effects_results = create_engine(f"sqlite://{effects_results_storage}")
-    n_trials = config.getint("simulation_metadata", "n_tuning_trials")
-    cv = config.getint("simulation_metadata", "n_tuning_folds")
-    metric = config.get("simulation_metadata", "tuning_metric")
-    direction = config.get("simulation_metadata", "tuning_direction")
-    tuning_studies_folder = config.get("storage", "tuning_studies_folder")
-    n_test = config.getint("simulation_metadata", "n_test")
-    groundtruth_feature_effect = config.get("simulation_metadata", "groundtruth_feature_effects")
+    sim_metatadata = parse_storage_and_sim_metadata(config)
+    engine_model_results = create_engine(f"sqlite://{sim_metatadata['model_results_storage']}")
+    engine_effects_results = create_engine(f"sqlite://{sim_metatadata['effects_results_storage']}")
 
     for i in range(n_sim):
         for n_train in n_trains:
@@ -57,7 +49,7 @@ def simulate(
                 # generate data
                 X_train, y_train, X_test, y_test = generate_data(
                     n_train=n_train,
-                    n_test=n_test,
+                    n_test=sim_metatadata["n_test"],
                     noise_sd=noise_sd,
                     seed=i,
                 )
@@ -65,13 +57,12 @@ def simulate(
                 # calulate feature effects of groundtruth
                 groundtruth = Groundtruth()
                 feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
-                if groundtruth_feature_effect == "theoretical":
+                if sim_metatadata["groundtruth_feature_effect"] == "theoretical":
                     # ugly workaround to get the grid values
                     grid = [
                         compute_pdps(groundtruth, X_train, feature_names, config)[i]["grid_values"]
                         for i in range(len(feature_names))
                     ]
-
                     pdp_groundtruth_functions = [
                         groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform")
                         for x in feature_names
@@ -84,14 +75,15 @@ def simulate(
                         }
                         for i in range(len(feature_names))
                     ]
-
                     # ale_groundtruth_functions = []
                     # ale_groundtruth = []
-                elif groundtruth_feature_effect == "empirical":
+                elif sim_metatadata["groundtruth_feature_effect"] == "empirical":
                     pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
                     # ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
                 else:
-                    raise ValueError(f"Unknown groundtruth feature effect: {groundtruth_feature_effect}")
+                    raise ValueError(
+                        f"Unknown groundtruth feature effect: {sim_metatadata['groundtruth_feature_effect']}"
+                    )
 
                 for model in models:
                     model_str = model.__class__.__name__
@@ -103,24 +95,23 @@ def simulate(
                         model,
                         X_train,
                         y_train,
-                        n_trials=n_trials,
-                        cv=cv,
-                        metric=metric,
-                        direction=direction,
-                        tuning_studies_folder=tuning_studies_folder,
+                        n_trials=sim_metatadata["n_trials"],
+                        cv=sim_metatadata["cv"],
+                        metric=sim_metatadata["metric"],
+                        direction=sim_metatadata["direction"],
+                        tuning_studies_folder=sim_metatadata["tuning_studies_folder"],
                         model_name=model_name,
                     )
 
                     # save model
-                    os.makedirs(model_folder, exist_ok=True)
+                    os.makedirs(sim_metatadata["model_folder"], exist_ok=True)
                     dump(
                         model,
-                        Path(os.getcwd()) / model_folder / f"{model_name}.joblib",
+                        Path(os.getcwd()) / sim_metatadata["model_folder"] / f"{model_name}.joblib",
                     )
 
                     # evaluate model
                     model_results = eval_model(model, X_train, y_train, X_test, y_test)
-
                     df_model_result = pd.DataFrame(
                         {
                             "model_id": [model_name],
@@ -145,12 +136,9 @@ def simulate(
                         if_exists="append",
                     )
 
-                    # calculate pdps
+                    # calculate and compare pdps to groundtruth
                     pdp = compute_pdps(model, X_train, feature_names, config)
-
-                    # compare pdps to groundtruth
                     pdp_comparison = compare_effects(pdp_groundtruth, pdp, mean_squared_error)
-
                     df_pdp_result = pd.concat(
                         (
                             pd.DataFrame(
@@ -167,19 +155,16 @@ def simulate(
                         axis=1,
                     )
 
-                    # save model results
+                    # save pdp results
                     df_pdp_result.to_sql(
                         "pdp_results",
                         con=engine_effects_results,
                         if_exists="append",
                     )
 
-                    # # calculate ales
+                    # # calculate ales and compare to groundtruth
                     # ale = compute_ales(model, X_train, feature_names, config)
-
-                    # # compare pdps to groundtruth
                     # ale_comparison = compare_effects(ale_groundtruth, ale, mean_squared_error)
-
                     # df_ale_result = pd.concat(
                     #     (
                     #         pd.DataFrame(
@@ -196,7 +181,7 @@ def simulate(
                     #     axis=1,
                     # )
 
-                    # # save model results
+                    # # save ale results
                     # df_ale_result.to_sql(
                     #     "ale_results",
                     #     con=engine_effects_results,
@@ -205,26 +190,14 @@ def simulate(
 
 
 if __name__ == "__main__":
-    model_names = sim_config.get("simulation_params", "models").split(",")
-    n_sim_config = sim_config.getint("simulation_params", "n_sim")
-    n_train_config = [int(x) for x in sim_config.get("simulation_params", "n_train").split(",")]
-    noise_sd_config = [float(x) for x in sim_config.get("simulation_params", "noise_sd").split(",")]
-    models_config = [map_modelname_to_estimator(model_name) for model_name in model_names]
+    sim_params = parse_sim_params(sim_config)
 
-    simulation_name = sim_config.get("storage", "simulation_name")
-
-    base_dir = Path(sim_config.get("storage", "simulations_dir")) / simulation_name
-    if not os.path.exists(base_dir):
-        os.mkdir(base_dir)
-        shutil.copy2("config.ini", base_dir / f"config_{simulation_name}.ini")
-        os.chdir(base_dir)
-    else:
-        raise ValueError(f"Simulation {base_dir} already exists.")
+    create_and_set_sim_dir(sim_config)
 
     simulate(
-        models=models_config,
-        n_sim=n_sim_config,
-        n_trains=n_train_config,
-        noise_sds=noise_sd_config,
+        models=sim_params["models_config"],
+        n_sim=sim_params["n_sim"],
+        n_trains=sim_params["n_train"],
+        noise_sds=sim_params["noise_sd"],
         config=sim_config,
     )
