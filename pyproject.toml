@@ -18,6 +18,7 @@ nbconvert = "^7.16.3"
 xgboost = "^2.0.3"
 pygam = "^0.9.1"
 pyale = "^1.2.0"
+sympy = "^1.12"
 
 [tool.black]
 line-length = 120
