@@ -1,12 +1,13 @@
-from typing_extensions import Literal, List
 from configparser import ConfigParser
 import math
+from typing_extensions import Literal, List
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib import transforms
 import seaborn as sns
 from sklearn.base import BaseEstimator
+from scipy.stats import pearsonr, spearmanr
 
 from feature_effect_empirical_analysis.plotting.utils import (
     set_style,
@@ -108,13 +109,9 @@ def plot_effect_comparison(
         title = "Accumulated local effects"
     effects = effect_func(model, X_train, features, config)
     if groundtruth_feature_effect == "theoretical":
-        grid = [
-            effects[i]["grid_values"]
-            for i in range(len(features))
-        ]
+        grid = [effects[i]["grid_values"] for i in range(len(features))]
         pdp_groundtruth_functions = [
-            groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform")
-            for x in features
+            groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform") for x in features
         ]
         effects_gt = [
             {
@@ -151,3 +148,113 @@ def plot_effect_comparison(
         axes[i].legend()
 
     return fig
+
+
+def plot_correlation_analysis(
+    df_melted: pd.DataFrame,
+    models: List[str],
+    feature_effect: str,
+    model_error_metric: str = "mse_test",
+    correlation_metric: Literal["Pearson", "Spearman"] = "Pearson",
+    overall_correlation: bool = False,
+):
+    """
+    Plot correlation analysis between model error and a specified feature effect
+    error across different noise standard deviations and models.
+
+    This function creates a series of scatter plots using Seaborn's FacetGrid,
+    each representing a correlation analysis between model error metrics and
+    feature effect errors. It can compute either Pearson or Spearman correlation
+    depending on the specified correlation metric. Annotations indicating the
+    correlation coefficients are added to each plot.
+
+    Parameters
+    ----------
+    df_melted : pd.DataFrame
+        A melted DataFrame (via plotting.utils.create_joined_melted_df) with each
+        row representing a specific observation and containing columns for model id,
+        feature error, and other variables.
+    models : List[str]
+        A list of model names to be used for hue in plots, should match values in
+        'model_x' column of `df_melted`.
+    feature_effect : str
+        The name of the feature effect to plot.
+    model_error_metric : str, optional
+        The name of the model error metric to plot (default is "mse_test"),
+        used to set xlabel in the plots.
+    correlation_metric : {'Pearson', 'Spearman'}, optional
+        The type of correlation to compute, either 'Pearson' or 'Spearman' (default is 'Pearson').
+    overall_correlation : bool, optional
+        If True, compute and annotate overall correlation per subplot. If False, only
+        annotate correlations per model (default is False).
+
+    Returns
+    -------
+    seaborn.axisgrid.FacetGrid
+        A FacetGrid object containing the generated plots.
+    """
+    set_style()
+
+    def corr(x, y):
+        if correlation_metric == "Pearson":
+            return pearsonr(x, y)[0]
+        elif correlation_metric == "Spearman":
+            return spearmanr(x, y)[0]
+
+    noise_sds = df_melted["noise_sd_x"].unique()
+
+    g = sns.FacetGrid(
+        df_melted,
+        col="noise_sd_x",
+        row="feature",
+        hue="model_x",
+        palette="Set2",
+        col_order=sorted(noise_sds),
+        hue_order=models,
+        aspect=1.5,
+        height=4,
+    )
+    g.map(sns.scatterplot, model_error_metric, "effect_error")
+
+    g.figure.suptitle(
+        f"Correlation Analysis ({correlation_metric}): {feature_effect} Error vs. Model Error",
+        fontsize=20,
+        fontweight="bold",
+        y=1.025,
+    )
+
+    for ax, ((_, _), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "noise_sd_x"])):
+        if overall_correlation:
+            correlation = (
+                corr(sub_df[model_error_metric], sub_df["effect_error"])
+                if len(sub_df["effect_error"]) > 1
+                else float("nan")
+            )
+            ax.text(
+                0.5,
+                0.9,
+                f"Overall Correlation: {correlation:.2f}",
+                ha="center",
+                va="center",
+                transform=ax.transAxes,
+                fontsize=9,
+            )
+        for model in models:
+            model_data = sub_df[sub_df["model_x"] == model]
+            if not model_data.empty:
+                model_error = model_data[model_error_metric]
+                effect_error = model_data["effect_error"]
+                correlation = corr(model_error, effect_error) if len(model_error) > 1 else float("nan")
+                ax.text(
+                    model_error.iloc[-1],
+                    effect_error.iloc[-1],
+                    f"{correlation:.2f}",
+                    color=sns.color_palette("Set2", n_colors=len(models)).as_hex()[models.index(model)],
+                    fontsize=9,
+                )
+
+    g.set_titles(col_template="Noise SD: {col_name}", row_template="${row_name}$", fontweight=16)
+    g.set_axis_labels(f"Model Error ({model_error_metric})", f"{feature_effect} Error")
+    g.add_legend(title="Estimator")
+
+    return g
