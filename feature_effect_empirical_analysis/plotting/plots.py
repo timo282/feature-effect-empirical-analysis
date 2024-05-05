@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 import math
-from typing_extensions import Literal, List
+from typing_extensions import Literal, List, Tuple
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -157,7 +157,8 @@ def plot_correlation_analysis(
     model_error_metric: str = "mse_test",
     correlation_metric: Literal["Pearson", "Spearman"] = "Pearson",
     overall_correlation: bool = False,
-):
+    return_correlation_table: bool = False,
+) -> sns.axisgrid.FacetGrid | Tuple[sns.axisgrid.FacetGrid, pd.DataFrame]:
     """
     Plot correlation analysis between model error and a specified feature effect
     error across different noise standard deviations and models.
@@ -187,6 +188,8 @@ def plot_correlation_analysis(
     overall_correlation : bool, optional
         If True, compute and annotate overall correlation per subplot. If False, only
         annotate correlations per model (default is False).
+    return_correlation_table : bool, optional
+        If True, return a DataFrame containing the correlation results (default is False).
 
     Returns
     -------
@@ -215,17 +218,19 @@ def plot_correlation_analysis(
         height=4,
     )
     g.map(sns.scatterplot, model_error_metric, "effect_error")
-
     g.figure.suptitle(
         f"Correlation Analysis ({correlation_metric}): {feature_effect} Error vs. Model Error",
         fontsize=20,
         fontweight="bold",
         y=1.025,
     )
+    g.figure.set_dpi(300)
 
-    for ax, ((_, _), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "noise_sd_x"])):
+    correlation_results = []
+
+    for ax, ((feature, noise_sd), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "noise_sd_x"])):
         if overall_correlation:
-            correlation = (
+            overall_corr = (
                 corr(sub_df[model_error_metric], sub_df["effect_error"])
                 if len(sub_df["effect_error"]) > 1
                 else float("nan")
@@ -233,28 +238,37 @@ def plot_correlation_analysis(
             ax.text(
                 0.5,
                 0.9,
-                f"Overall Correlation: {correlation:.2f}",
+                f"Overall Correlation: {overall_corr:.2f}",
                 ha="center",
                 va="center",
                 transform=ax.transAxes,
                 fontsize=9,
+            )
+            correlation_results.append(
+                {"noise_sd": noise_sd, "feature": feature, "model": "Overall", "correlation": overall_corr}
             )
         for model in models:
             model_data = sub_df[sub_df["model_x"] == model]
             if not model_data.empty:
                 model_error = model_data[model_error_metric]
                 effect_error = model_data["effect_error"]
-                correlation = corr(model_error, effect_error) if len(model_error) > 1 else float("nan")
+                model_corr = corr(model_error, effect_error) if len(model_error) > 1 else float("nan")
                 ax.text(
                     model_error.iloc[-1],
                     effect_error.iloc[-1],
-                    f"{correlation:.2f}",
+                    f"{model_corr:.2f}",
                     color=sns.color_palette("Set2", n_colors=len(models)).as_hex()[models.index(model)],
                     fontsize=9,
+                )
+                correlation_results.append(
+                    {"noise_sd": noise_sd, "feature": feature, "model": model, "correlation": model_corr}
                 )
 
     g.set_titles(col_template="Noise SD: {col_name}", row_template="${row_name}$", fontweight=16)
     g.set_axis_labels(f"Model Error ({model_error_metric})", f"{feature_effect} Error")
     g.add_legend(title="Estimator")
+
+    if return_correlation_table:
+        return g, pd.DataFrame(correlation_results)
 
     return g
