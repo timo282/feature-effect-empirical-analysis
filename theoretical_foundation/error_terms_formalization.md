@@ -27,7 +27,7 @@ where $x^{(i)}_C$ are actual feature values from the training sample for the fea
 
 Theoretical (centered) Accumulated Local Effects calculated directly on the known groundtruth function and the (conditional) feature distributions:
 
-$ALE_{f,S}(x_S) = \int_{z_{0,1}}^{x_S} \mathbb E_{X_C |X_S}[f^S(X_S, X_C)|X_S = z_S] dz_S − c = \int_{z_{0,1}}^{x_S} \int_{x_C}f^S(z_S,x_C)\mathbb P(x_C|z_S)dx_C dz_S - c$
+$ALE_{f,S}(x_S) = \int_{x_{min,S}}^{x_S} \mathbb E_{X_C |X_S}[f^S(X_S, X_C)|X_S = z_S] dz_S − c = \int_{x_{min,S}}^{x_S} \int_{x_C}f^S(z_S,x_C)\mathbb P(x_C|z_S)dx_C dz_S - c$
 
 where $f^S(x_s, x_c) = \frac{\delta f(x_S, x_C)}{\delta x_S}$ and $c$ some constant to center the feature effect.
 
@@ -119,34 +119,54 @@ Additionally, the curves can be centered around 0 before the comparison, here de
 
 ## Examples
 
-Using the examples from *Liu et al., 2018*:
-<!--
-
-Let $X = (X_1, X_2)^T$ be bivariate normal with parameters 
-
-$\mathbb{E}[X_1]=\mu_1$, $Var[X_1] = \sigma_1^2$, $\mathbb{E}[X_2]=\mu_2$, $Var[X_2] = \sigma_2^2$, $Corr(X_1, X_2) = \rho$.
-
-We can then model $X_1$ as a linear function of $X_2$: 
-
-$X_1 − \mu_1 = \beta_{1|2}(X_2 − \mu_2) + \epsilon_2$, 
-
-where $\beta_{1|2} = \rho \frac{\sigma_1}{\sigma_2}$.
-Similarly, we have
-
-$X_2 − \mu_2 = \beta_{2|1}(X_1 − \mu_1) + \epsilon_1$ with $\beta_{2|1} = \rho \frac{\sigma_2}{\sigma_1}$. 
-
--->
-
-For three different example groundtruth functions $f$, we get the groundtruth feature effects:
+Using the examples from *Liu et al., 2018* for three different exemplary groundtruth functions $f$, we get the following groundtruth feature effects:
 
 |  | $f(x_1, x_2) = x_1 + x_2$ | $f(x_1, x_2) = x_1 x_2$ | $f(x_1, x_2) = x_1^2 + x_1 x_2$
 | --- | --- | --- | --- |
 | $PD_{f, 1}(x_1)$ | $x_1 + \mathbb{E}[X_2]$ | $\mathbb{E}[X_2]x_1$ | $x_1^2 + \mathbb{E}[X_2]x_1$ |
-| $ALE_{f, 1}(x_1)$ | ... | ... | ... |
+| $ALE_{f, 1}(x_1)$ | $x_1 - x_{min,1} - c$ | $\int_{x_{min,1}}^{x_1} \mathbb{E}[X_2 ∣ X_1=z_1]dz_1−c$ | $x_1^2 - x_{min,1}^2 + \int_{x_{min,1}}^{x_1} \mathbb{E}[X_2 ∣ X_1=z_1]dz_1−c$ |
 | $f_1(x_1)$ | $x_1$ | - | $x_1^2$ |
 | $PD_{f, 2}(x_2)$ | $x_2 + \mathbb{E}[X_1]$ | $\mathbb{E}[X_1]x_2$ | $\mathbb{E}[X_1^2] + \mathbb{E}[X_1]x_2$ |
-| $ALE_{f, 2}(x_2)$ | ... | ... | ... |
+| $ALE_{f, 2}(x_2)$ | $x_2 - x_{min,2} - c$ | $\int_{x_{min,2}}^{x_2} \mathbb{E}[X_1 ∣ X_2=z_2]dz_2−c$ | $\int_{x_{min,2}}^{x_2} \mathbb{E}[X_1 ∣ X_2=z_2]dz_2−c$ |
 | $f_2(x_2)$ | $x_2$ | - | - |
+
+In order to make this more concrete, let us use the following example feature distribution from *Liu et al., 2018*
+
+Let $X = (X_1, X_2)^T$ be bivariate normal with parameters 
+
+$$
+\mathbb{E}[X_1]=\mu_1, Var[X_1] = \sigma_1^2, \mathbb{E}[X_2]=\mu_2, Var[X_2] = \sigma_2^2, Corr(X_1, X_2) = \rho
+$$.
+
+We can then model $X_1$ as a linear function of $X_2$: 
+
+$$
+X_1 − \mu_1 = \beta_{1|2}(X_2 − \mu_2) + \epsilon_2
+$$, 
+
+where $\beta_{1|2} = \rho \frac{\sigma_1}{\sigma_2}$.
+Similarly, we have
+
+$$
+X_2 − \mu_2 = \beta_{2|1}(X_1 − \mu_1) + \epsilon_1
+$$ 
+
+with $\beta_{2|1} = \rho \frac{\sigma_2}{\sigma_1}$. 
+
+This leads to the following results for the feature effects above:
+
+|  | $f(x_1, x_2) = x_1 + x_2$ | $f(x_1, x_2) = x_1 x_2$ | $f(x_1, x_2) = x_1^2 + x_1 x_2$
+| --- | --- | --- | --- |
+| $PD_{f, 1}(x_1)$ | $x_1 + \mu_2$ | $\mu_2x_1$ | $x_1^2 + \mu_2x_1$ |
+| $ALE_{f, 1}(x_1)$ | $x_1 - x_{min,1} - c$ | $\frac{\beta_{2∣1}}{2}(x_1^2-x_{min,1}^2)+(\mu_2 - \beta_{2∣1} \mu_1) (x_1 - x_{min,1}) - c$ | $(1 + \frac{\beta_{2∣1}}{2})(x_1^2-x_{min,1}^2)+(\mu_2 - \beta_{2∣1} \mu_1) (x_1 - x_{min,1}) - c$ |
+| $f_1(x_1)$ | $x_1$ | - | $x_1^2$ |
+| $PD_{f, 2}(x_2)$ | $x_2 + \mu_1$ | $\mu_1x_2$ | $\mu_1^2 + \sigma_1^2 + \mu_1x_2$ |
+| $ALE_{f, 2}(x_2)$ | $x_2 - x_{min,2} - c$ | $\frac{\beta_{1∣2}}{2}(x_2^2-x_{min,2}^2)+(\mu_1 - \beta_{1∣2} \mu_2) (x_2 - x_{min,2}) - c$ | $\frac{\beta_{1∣2}}{2}(x_2^2-x_{min,2}^2)+(\mu_1 - \beta_{1∣2} \mu_2) (x_2 - x_{min,2}) - c$ |
+| $f_2(x_2)$ | $x_2$ | - | - |
+
+Note that
+- if additive constants are ignored (e.g., by centering the curve), the feature effects for the purely additive example conform.
+- if additive constants are ignored and the correlation between the features is $\rho=0$, the PD and ALE are equivalent for all functions.
 
 ## References
 
