@@ -35,7 +35,7 @@ def simulate(
     models: List[BaseEstimator],
     n_sim: int,
     n_trains: List[int],
-    noise_sds: List[float],
+    snrs: List[float],
     config: ConfigParser,
 ):
     np.random.seed(42)
@@ -45,12 +45,12 @@ def simulate(
 
     for i in range(n_sim):
         for n_train in n_trains:
-            for noise_sd in noise_sds:
+            for snr in snrs:
                 # generate data
                 X_train, y_train, X_test, y_test = generate_data(
                     n_train=n_train,
                     n_test=sim_metatadata["n_test"],
-                    noise_sd=noise_sd,
+                    snr=snr,
                     seed=i,
                 )
 
@@ -88,7 +88,7 @@ def simulate(
                 for model in models:
                     model_str = model.__class__.__name__
                     date = datetime.now().strftime("%Y%m%d")
-                    model_name = f"{model_str}_{date}_{i+1}_{n_train}_{noise_sd}"
+                    model_name = f"{model_str}_{date}_{i+1}_{n_train}_{snr}"
 
                     # train and tune model
                     model = train_model(
@@ -118,7 +118,7 @@ def simulate(
                             "model": [model_str],
                             "simulation": [i + 1],
                             "n_train": [n_train],
-                            "noise_sd": [noise_sd],
+                            "snr": [snr],
                             "mse_train": [model_results[0]],
                             "mse_test": [model_results[1]],
                             "mae_train": [model_results[2]],
@@ -147,7 +147,7 @@ def simulate(
                                     "model": [model_str],
                                     "simulation": [i + 1],
                                     "n_train": [n_train],
-                                    "noise_sd": [noise_sd],
+                                    "snr": [snr],
                                 }
                             ),
                             pdp_comparison,
@@ -173,7 +173,7 @@ def simulate(
                     #                 "model": [model_str],
                     #                 "simulation": [i + 1],
                     #                 "n_train": [n_train],
-                    #                 "noise_sd": [noise_sd],
+                    #                 "snr": [snr],
                     #             }
                     #         ),
                     #         ale_comparison,
@@ -198,6 +198,6 @@ if __name__ == "__main__":
         models=sim_params["models_config"],
         n_sim=sim_params["n_sim"],
         n_trains=sim_params["n_train"],
-        noise_sds=sim_params["noise_sd"],
+        snrs=sim_params["snr"],
         config=sim_config,
     )

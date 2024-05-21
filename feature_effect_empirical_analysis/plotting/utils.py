@@ -70,7 +70,7 @@ def create_joined_melted_df(df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame
         "model_x",
         "simulation_x",
         "n_train_x",
-        "noise_sd_x",
+        "snr_x",
         "mse_train",
         "mse_test",
         "mae_train",

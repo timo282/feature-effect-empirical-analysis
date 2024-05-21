@@ -23,7 +23,7 @@ def boxplot_model_results(metric: Literal["mse", "mae", "r2"], df: pd.DataFrame)
     fig.suptitle("Model evaluation", fontsize=16, fontweight="bold")
     ax[0].set_title(f"{metric} on train set")
     sns.boxplot(
-        x="noise_sd",
+        x="snr",
         y=f"{metric}_train",
         hue="model",
         data=df,
@@ -32,7 +32,7 @@ def boxplot_model_results(metric: Literal["mse", "mae", "r2"], df: pd.DataFrame)
     )
     ax[0].legend().set_visible(False)
     sns.boxplot(
-        x="noise_sd",
+        x="snr",
         y=f"{metric}_test",
         hue="model",
         data=df,
@@ -78,7 +78,7 @@ def boxplot_feature_effect_results(
             )
         plt.title(f"{effect_type} of {feature}")
         sns.boxplot(
-            x="noise_sd",
+            x="snr",
             y=feature,
             hue="model",
             data=df,
@@ -161,7 +161,7 @@ def plot_correlation_analysis(
 ) -> sns.axisgrid.FacetGrid | Tuple[sns.axisgrid.FacetGrid, pd.DataFrame]:
     """
     Plot correlation analysis between model error and a specified feature effect
-    error across different noise standard deviations and models.
+    error across different signal-to-noise ratios and models.
 
     This function creates a series of scatter plots using Seaborn's FacetGrid,
     each representing a correlation analysis between model error metrics and
@@ -204,15 +204,15 @@ def plot_correlation_analysis(
         elif correlation_metric == "Spearman":
             return spearmanr(x, y)[0]
 
-    noise_sds = df_melted["noise_sd_x"].unique()
+    snrs = df_melted["snr_x"].unique()
 
     g = sns.FacetGrid(
         df_melted,
-        col="noise_sd_x",
+        col="snr_x",
         row="feature",
         hue="model_x",
         palette="Set2",
-        col_order=sorted(noise_sds),
+        col_order=sorted(snrs),
         hue_order=models,
         aspect=1.5,
         height=4,
@@ -228,7 +228,7 @@ def plot_correlation_analysis(
 
     correlation_results = []
 
-    for ax, ((feature, noise_sd), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "noise_sd_x"])):
+    for ax, ((feature, snr), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "snr_x"])):
         if overall_correlation:
             overall_corr = (
                 corr(sub_df[model_error_metric], sub_df["effect_error"])
@@ -245,7 +245,7 @@ def plot_correlation_analysis(
                 fontsize=9,
             )
             correlation_results.append(
-                {"noise_sd": noise_sd, "feature": feature, "model": "Overall", "correlation": overall_corr}
+                {"snr": snr, "feature": feature, "model": "Overall", "correlation": overall_corr}
             )
         for model in models:
             model_data = sub_df[sub_df["model_x"] == model]
@@ -261,10 +261,10 @@ def plot_correlation_analysis(
                     fontsize=9,
                 )
                 correlation_results.append(
-                    {"noise_sd": noise_sd, "feature": feature, "model": model, "correlation": model_corr}
+                    {"snr": snr, "feature": feature, "model": model, "correlation": model_corr}
                 )
 
-    g.set_titles(col_template="Noise SD: {col_name}", row_template="${row_name}$", fontweight=16)
+    g.set_titles(col_template="SNR: {col_name}", row_template="${row_name}$", fontweight=16)
     g.set_axis_labels(f"Model Error ({model_error_metric})", f"{feature_effect} Error")
     g.add_legend(title="Estimator")
 
