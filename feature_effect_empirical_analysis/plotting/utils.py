@@ -40,7 +40,9 @@ def get_feature_effect_plot_style():
     return style
 
 
-def create_joined_melted_df(df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame) -> pd.DataFrame:
+def create_joined_melted_df(
+    df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame, noise_name: str = "snr_x"
+) -> pd.DataFrame:
     """
     Merge two DataFrames on 'model_id' and reshape the resulting DataFrame to a long format.
 
@@ -57,6 +59,8 @@ def create_joined_melted_df(df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame
     df_pdp_res : pd.DataFrame
         DataFrame containing PDP results, also must include the 'model_id' column and
         the values for each feature ('x_1' to 'x_5').
+    noise_name : str, optional
+        Name of the noise column in the merged DataFrame, by default "snr_x"
 
     Returns
     -------
@@ -70,7 +74,7 @@ def create_joined_melted_df(df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame
         "model_x",
         "simulation_x",
         "n_train_x",
-        "snr_x",
+        noise_name,
         "mse_train",
         "mse_test",
         "mae_train",

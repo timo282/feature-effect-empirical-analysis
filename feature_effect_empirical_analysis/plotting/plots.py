@@ -158,6 +158,7 @@ def plot_correlation_analysis(
     correlation_metric: Literal["Pearson", "Spearman"] = "Pearson",
     overall_correlation: bool = False,
     return_correlation_table: bool = False,
+    noise_name: str = "snr_x",
 ) -> sns.axisgrid.FacetGrid | Tuple[sns.axisgrid.FacetGrid, pd.DataFrame]:
     """
     Plot correlation analysis between model error and a specified feature effect
@@ -190,6 +191,8 @@ def plot_correlation_analysis(
         annotate correlations per model (default is False).
     return_correlation_table : bool, optional
         If True, return a DataFrame containing the correlation results (default is False).
+    noise_name : str, optional
+        Name of the noise column in the merged DataFrame, by default "snr_x".
 
     Returns
     -------
@@ -204,11 +207,11 @@ def plot_correlation_analysis(
         elif correlation_metric == "Spearman":
             return spearmanr(x, y)[0]
 
-    snrs = df_melted["snr_x"].unique()
+    snrs = df_melted[noise_name].unique()
 
     g = sns.FacetGrid(
         df_melted,
-        col="snr_x",
+        col=noise_name,
         row="feature",
         hue="model_x",
         palette="Set2",
@@ -228,7 +231,7 @@ def plot_correlation_analysis(
 
     correlation_results = []
 
-    for ax, ((feature, snr), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", "snr_x"])):
+    for ax, ((feature, snr), sub_df) in zip(g.axes.flatten(), df_melted.groupby(["feature", noise_name])):
         if overall_correlation:
             overall_corr = (
                 corr(sub_df[model_error_metric], sub_df["effect_error"])
