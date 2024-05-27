@@ -267,7 +267,7 @@ def plot_correlation_analysis(
                     {"snr": snr, "feature": feature, "model": model, "correlation": model_corr}
                 )
 
-    g.set_titles(col_template="SNR: {col_name}", row_template="${row_name}$", fontweight=16)
+    g.set_titles(col_template=noise_name+": {col_name}", row_template="${row_name}$", fontweight=16)
     g.set_axis_labels(f"Model Error ({model_error_metric})", f"{feature_effect} Error")
     g.add_legend(title="Estimator")
 
