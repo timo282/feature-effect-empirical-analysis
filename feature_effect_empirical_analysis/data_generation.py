@@ -49,7 +49,7 @@ class Groundtruth(BaseEstimator):
         sample in X. The output `y` is created according to the formula::
 
         y(X) = 10 * sin(pi * X[:, 0] * X[:, 1]) + 20 * (X[:, 2] - 0.5) ** 2 \
-        + 10 * X[:, 3] + 5 * X[:, 4] + noise * N(0, 1).
+        + 10 * X[:, 3] + 5 * X[:, 4].
 
         Parameters
         ----------
@@ -176,7 +176,7 @@ def _make_friedman1(n_samples=100, n_features=10, *, noise=0.0, random_state=Non
 def generate_data(
     n_train: int,
     n_test: int,
-    noise_sd: float,
+    snr: float,
     seed: int,
     n_features: int = 5,
 ):
@@ -188,8 +188,8 @@ def generate_data(
         Number of training samples to generate.
     n_test : int
         Number of test samples to generate.
-    noise_sd : float
-        Standard deviation of the noise to add to the data.
+    snr : float
+        Signal-to-noise-ratio defining the amount of noise to add to the data.
     seed : int
         Random seed to use for reproducibility.
     n_features : int, optional
@@ -204,9 +204,33 @@ def generate_data(
     X, y = _make_friedman1(
         n_samples=n_train + n_test,
         n_features=n_features,
-        noise=noise_sd,
+        noise=_get_noise_sd_from_snr(snr, _make_friedman1),
         random_state=seed,
     )
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=n_test, random_state=42)
 
     return X_train, y_train, X_test, y_test
+
+
+def _get_noise_sd_from_snr(snr: int, generate_data_func: Callable) -> float:
+    """Calculate noise standard deviation from signal-to-noise ratio.
+
+    Parameters
+    ----------
+    snr : int
+        Signal-to-noise ratio.
+    generate_data_func : Callable
+        Function to generate data with argument n_samples
+        and returning features X and target values y.
+
+    Returns
+    -------
+    float
+        Noise standard deviation.
+    """
+    _, y = generate_data_func(100000)
+
+    signal_std = np.std(y)
+    noise_std = signal_std / snr
+
+    return noise_std

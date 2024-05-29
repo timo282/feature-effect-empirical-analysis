@@ -24,7 +24,7 @@ def parse_sim_params(sim_config: ConfigParser) -> Dict:
     model_names = sim_config.get("simulation_params", "models").split(",")
     param_dict["n_sim"] = sim_config.getint("simulation_params", "n_sim")
     param_dict["n_train"] = [int(x) for x in sim_config.get("simulation_params", "n_train").split(",")]
-    param_dict["noise_sd"] = [float(x) for x in sim_config.get("simulation_params", "noise_sd").split(",")]
+    param_dict["snr"] = [float(x) for x in sim_config.get("simulation_params", "snr").split(",")]
     param_dict["models_config"] = [map_modelname_to_estimator(model_name) for model_name in model_names]
 
     return param_dict
