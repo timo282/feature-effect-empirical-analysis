@@ -85,14 +85,7 @@ Main effects of the estimated model, if they can directly by derived:
 
 ## Error Metrics
 
-From these definitions ($PD_{f, S}(x_S)$,
-$\widehat{PD}_{f, S}(x_S)$,
-$ALE_{f,S}(x_S)$,
-$\widehat{ALE}_{f,S}(x_S)$,
-$f_{S}(x_S)$, and
-$\widehat{PD}_{\hat f,S}(x_S)$,
-$\widehat{ALE}_{\hat f,S}(x_S)$,
-$\hat f_S(x_S)$), one can derive several error metrics:
+From these definitions ($PD_{f, S}(x_S)$, $\widehat{PD}_{f, S}(x_S)$, $ALE_{f,S}(x_S)$, $\widehat{ALE}_{f,S}(x_S)$, $f_{S}(x_S)$, and $\widehat{PD}_{\hat f,S}(x_S)$, $\widehat{ALE}_{\hat f,S}(x_S)$, $\hat f_S(x_S)$), one can derive several error metrics:
 
 Model PD w.r.t. DGP:
 - $Err(\widehat{PD}_{\hat f,S}(x_S),PD_{f, S}(x_S))$ or $Err_c(\widehat{PD}_{\hat f,S}(x_S),PD_{f, S}(x_S))$
