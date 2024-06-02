@@ -23,7 +23,7 @@ from feature_effect_empirical_analysis.utils import (
 )
 from feature_effect_empirical_analysis.feature_effects import (
     compute_pdps,
-    # compute_ales,
+    compute_ales,
     compare_effects,
 )
 
@@ -57,33 +57,8 @@ def simulate(
                 # calulate feature effects of groundtruth
                 groundtruth = Groundtruth()
                 feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
-                if sim_metatadata["groundtruth_feature_effect"] == "theoretical":
-                    # ugly workaround to get the grid values
-                    grid = [
-                        compute_pdps(groundtruth, X_train, feature_names, config)[i]["grid_values"]
-                        for i in range(len(feature_names))
-                    ]
-                    pdp_groundtruth_functions = [
-                        groundtruth.get_theoretical_partial_dependence(x, feature_distribution="uniform")
-                        for x in feature_names
-                    ]
-                    pdp_groundtruth = [
-                        {
-                            "feature": feature_names[i],
-                            "grid_values": grid[i],
-                            "effect": [pdp_groundtruth_functions[i](p) for p in grid[i]],
-                        }
-                        for i in range(len(feature_names))
-                    ]
-                    # ale_groundtruth_functions = []
-                    # ale_groundtruth = []
-                elif sim_metatadata["groundtruth_feature_effect"] == "empirical":
-                    pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
-                    # ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
-                else:
-                    raise ValueError(
-                        f"Unknown groundtruth feature effect: {sim_metatadata['groundtruth_feature_effect']}"
-                    )
+                pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
+                ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
 
                 for model in models:
                     model_str = model.__class__.__name__
@@ -162,31 +137,31 @@ def simulate(
                         if_exists="append",
                     )
 
-                    # # calculate ales and compare to groundtruth
-                    # ale = compute_ales(model, X_train, feature_names, config)
-                    # ale_comparison = compare_effects(ale_groundtruth, ale, mean_squared_error)
-                    # df_ale_result = pd.concat(
-                    #     (
-                    #         pd.DataFrame(
-                    #             {
-                    #                 "model_id": [model_name],
-                    #                 "model": [model_str],
-                    #                 "simulation": [i + 1],
-                    #                 "n_train": [n_train],
-                    #                 "snr": [snr],
-                    #             }
-                    #         ),
-                    #         ale_comparison,
-                    #     ),
-                    #     axis=1,
-                    # )
+                    # calculate ales and compare to groundtruth
+                    ale = compute_ales(model, X_train, feature_names, config)
+                    ale_comparison = compare_effects(ale_groundtruth, ale, mean_squared_error)
+                    df_ale_result = pd.concat(
+                        (
+                            pd.DataFrame(
+                                {
+                                    "model_id": [model_name],
+                                    "model": [model_str],
+                                    "simulation": [i + 1],
+                                    "n_train": [n_train],
+                                    "snr": [snr],
+                                }
+                            ),
+                            ale_comparison,
+                        ),
+                        axis=1,
+                    )
 
-                    # # save ale results
-                    # df_ale_result.to_sql(
-                    #     "ale_results",
-                    #     con=engine_effects_results,
-                    #     if_exists="append",
-                    # )
+                    # save ale results
+                    df_ale_result.to_sql(
+                        "ale_results",
+                        con=engine_effects_results,
+                        if_exists="append",
+                    )
 
 
 if __name__ == "__main__":

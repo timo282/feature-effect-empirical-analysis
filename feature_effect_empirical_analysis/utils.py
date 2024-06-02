@@ -54,7 +54,6 @@ def parse_storage_and_sim_metadata(config: ConfigParser) -> Dict:
     metadata_dict["direction"] = config.get("simulation_metadata", "tuning_direction")
     metadata_dict["tuning_studies_folder"] = config.get("storage", "tuning_studies_folder")
     metadata_dict["n_test"] = config.getint("simulation_metadata", "n_test")
-    metadata_dict["groundtruth_feature_effect"] = config.get("simulation_metadata", "groundtruth_feature_effects")
 
     return metadata_dict
 
