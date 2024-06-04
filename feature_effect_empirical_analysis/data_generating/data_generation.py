@@ -31,6 +31,8 @@ class Groundtruth(ABC, BaseEstimator):
         Correlation matrix of the features. If None, features are independent.
     n_features : int
         Number of features.
+    feature_names : List[str]
+        Names of the features.
     """
 
     def __init__(self):
@@ -54,6 +56,11 @@ class Groundtruth(ABC, BaseEstimator):
     @abstractmethod
     def n_features(self) -> int:
         """Number of features."""
+
+    @property
+    @abstractmethod
+    def feature_names(self) -> List[str]:
+        """Names of the features."""
 
     def fit(self, X, y):
         """

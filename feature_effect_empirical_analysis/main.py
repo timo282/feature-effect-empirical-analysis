@@ -10,10 +10,8 @@ from sqlalchemy import create_engine
 from sklearn.base import BaseEstimator
 from sklearn.metrics import mean_squared_error
 
-from feature_effect_empirical_analysis.data_generation import (
-    generate_data,
-    Groundtruth,
-)
+from feature_effect_empirical_analysis.data_generating.data_generation import generate_data
+from feature_effect_empirical_analysis.data_generating.friedman1 import Friedman1Groundtruth
 from feature_effect_empirical_analysis.model_training import train_model
 from feature_effect_empirical_analysis.model_eval import eval_model
 from feature_effect_empirical_analysis.utils import (
@@ -47,16 +45,26 @@ def simulate(
         for n_train in n_trains:
             for snr in snrs:
                 # generate data
+                groundtruth = Friedman1Groundtruth(
+                    marginal_distributions=[("uniform", (0, 1))] * 5,
+                    correlation_matrix=np.eye(5),
+                )
                 X_train, y_train, X_test, y_test = generate_data(
+                    groundtruth=groundtruth,
                     n_train=n_train,
                     n_test=sim_metatadata["n_test"],
                     snr=snr,
                     seed=i,
                 )
 
+                # save groundtruth
+                dump(
+                    groundtruth,
+                    Path(os.getcwd()) / "groundtruth.joblib",
+                )
+
                 # calulate feature effects of groundtruth
-                groundtruth = Groundtruth()
-                feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
+                feature_names = groundtruth.feature_names
                 pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
                 ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
 

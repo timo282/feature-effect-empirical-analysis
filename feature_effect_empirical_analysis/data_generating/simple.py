@@ -22,6 +22,7 @@ class Simple2FGroundtruth(Groundtruth):
         self._marginal_distributions = marginal_distributions
         self._correlation_matrix = correlation_matrix
         self._n_features = 2
+        self._feature_names = ["x_1", "x_2"]
 
     @property
     def marginal_distributions(self) -> List[Tuple[Literal["normal", "uniform"], Tuple]]:
@@ -37,6 +38,11 @@ class Simple2FGroundtruth(Groundtruth):
     def n_features(self) -> int:
         """Number of features."""
         return self._n_features
+
+    @property
+    def feature_names(self) -> List[str]:
+        """Names of the features."""
+        return self._feature_names
 
     @abstractmethod
     def predict(self, X) -> float:
