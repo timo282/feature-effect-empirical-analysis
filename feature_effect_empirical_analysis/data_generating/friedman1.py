@@ -2,10 +2,11 @@ from typing import Literal, Callable, List, Tuple, Optional
 import pandas as pd
 import numpy as np
 from scipy.integrate import quad
-from sklearn.base import BaseEstimator
+
+from feature_effect_empirical_analysis.data_generating.data_generation import Groundtruth
 
 
-class Friedman1Groundtruth(BaseEstimator):
+class Friedman1Groundtruth(Groundtruth):
     """
     A groundtruth class for the Friedman1 function, which is defined as::
 
@@ -23,6 +24,7 @@ class Friedman1Groundtruth(BaseEstimator):
         self._marginal_distributions = marginal_distributions
         self._correlation_matrix = correlation_matrix
         self._n_features = 5
+        self._feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
 
     @property
     def marginal_distributions(self) -> List[Tuple[Literal["normal", "uniform"], Tuple]]:
@@ -38,6 +40,11 @@ class Friedman1Groundtruth(BaseEstimator):
     def n_features(self) -> int:
         """Number of features."""
         return self._n_features
+
+    @property
+    def feature_names(self) -> List[str]:
+        """Names of the features."""
+        return self._feature_names
 
     def predict(self, X) -> np.ndarray:
         """
