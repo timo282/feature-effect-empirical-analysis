@@ -8,8 +8,7 @@ from feature_effect_empirical_analysis.data_generating.data_generation import Gr
 
 class Simple2FGroundtruth(Groundtruth):
     """
-    A simple additive groundtruth specified by the formula::
-    `g(x) = x_1 + 0.5*x_2^2$`
+    An abstract class for simple 2-feature groundtruths.
     """
 
     def __init__(
