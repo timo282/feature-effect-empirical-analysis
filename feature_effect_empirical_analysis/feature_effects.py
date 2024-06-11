@@ -75,6 +75,7 @@ def compare_effects(
     effects_groundtruth: List[Dict],
     effects_model: List[Dict],
     metric: Callable,
+    center_curves: bool = False,
 ) -> pd.DataFrame:
     comparison = {"metric": metric.__name__}
     for i, effects_model_feature in enumerate(effects_model):
@@ -86,6 +87,15 @@ def compare_effects(
             effects_model_feature["grid_values"],
         ):
             raise ValueError("Grid values in groundtruth and model effects do not match")
+
+        groundtruth_effect = np.array(effects_groundtruth_feature["effect"])
+        model_effect = np.array(effects_model_feature["effect"])
+
+        # Center the effects by subtracting the mean if center_curves is True
+        if center_curves:
+            groundtruth_effect -= np.mean(groundtruth_effect)
+            model_effect -= np.mean(model_effect)
+
         comparison[effects_model_feature["feature"]] = metric(
             effects_groundtruth_feature["effect"],
             effects_model_feature["effect"],
