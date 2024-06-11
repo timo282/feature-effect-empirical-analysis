@@ -3,6 +3,8 @@ from typing import Dict
 from pathlib import Path
 import os
 import shutil
+import ast
+import numpy as np
 
 from feature_effect_empirical_analysis.mappings import map_modelname_to_estimator
 
@@ -26,6 +28,10 @@ def parse_sim_params(sim_config: ConfigParser) -> Dict:
     param_dict["n_train"] = [int(x) for x in sim_config.get("simulation_params", "n_train").split(",")]
     param_dict["snr"] = [float(x) for x in sim_config.get("simulation_params", "snr").split(",")]
     param_dict["models_config"] = [map_modelname_to_estimator(model_name) for model_name in model_names]
+    param_dict["marginals"] = ast.literal_eval(sim_config["simulation_params"]["marginals"])
+    param_dict["corr_matrix"] = [
+        np.array(element) for element in ast.literal_eval(sim_config["simulation_params"]["correlation_matrices"])
+    ]
 
     return param_dict
 

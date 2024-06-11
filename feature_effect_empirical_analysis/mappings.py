@@ -1,4 +1,5 @@
-from typing_extensions import List, Tuple
+from typing_extensions import List, Tuple, Literal
+import numpy as np
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.svm import SVR
@@ -7,6 +8,27 @@ from sklearn.base import BaseEstimator, RegressorMixin
 from pygam import LinearGAM, s, l, te
 from xgboost import XGBRegressor
 import optuna
+
+from feature_effect_empirical_analysis.data_generating.data_generation import Groundtruth
+from feature_effect_empirical_analysis.data_generating.simple import (
+    SimpleAdditiveGroundtruth,
+    SimpleInteractionGroundtruth,
+    SimpleCombinedGroundtruth,
+)
+from feature_effect_empirical_analysis.data_generating.friedman1 import Friedman1Groundtruth
+
+
+def map_dataset_to_groundtruth(
+    dataset: str, marginals: List[Tuple[Literal["normal", "uniform"], Tuple]], corr_matrix: np.array
+) -> Groundtruth:
+    if dataset == "SimpleAdditiveGroundtruth":
+        return SimpleAdditiveGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+    if dataset == "SimpleInteractionGroundtruth":
+        return SimpleInteractionGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+    if dataset == "SimpleCombinedGroundtruth":
+        return SimpleCombinedGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+    if dataset == "Friedman1Groundtruth":
+        return Friedman1Groundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
 
 
 def map_modelname_to_estimator(model_name: str) -> BaseEstimator:

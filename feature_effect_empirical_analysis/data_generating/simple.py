@@ -106,7 +106,7 @@ class SimpleAdditiveGroundtruth(Simple2FGroundtruth):
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleAdditiveGroundtruth.")
 
 
-class SimpleInteractionGroundtruth(Groundtruth):
+class SimpleInteractionGroundtruth(Simple2FGroundtruth):
     """
     A simple interaction groundtruth specified by the formula::
     `g(x) = x_1 * x_2$`
@@ -136,7 +136,7 @@ class SimpleInteractionGroundtruth(Groundtruth):
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleInteractionGroundtruth.")
 
 
-class SimpleCombinedGroundtruth(Groundtruth):
+class SimpleCombinedGroundtruth(Simple2FGroundtruth):
     """
     A simple combined additive and interaction groundtruth specified by the formula::
     `g(x) = x_1 + 0.5*x_2^2 + x_1*x_2`
