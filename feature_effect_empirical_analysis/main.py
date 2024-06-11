@@ -121,7 +121,9 @@ def simulate(
 
                     # calculate and compare pdps to groundtruth
                     pdp = compute_pdps(model, X_train, feature_names, config)
-                    pdp_comparison = compare_effects(pdp_groundtruth, pdp, mean_squared_error)
+                    pdp_comparison = compare_effects(
+                        pdp_groundtruth, pdp, mean_squared_error, center_curves=config["errors"].getboolean("centered")
+                    )
                     df_pdp_result = pd.concat(
                         (
                             pd.DataFrame(
@@ -147,7 +149,9 @@ def simulate(
 
                     # calculate ales and compare to groundtruth
                     ale = compute_ales(model, X_train, feature_names, config)
-                    ale_comparison = compare_effects(ale_groundtruth, ale, mean_squared_error)
+                    ale_comparison = compare_effects(
+                        ale_groundtruth, ale, mean_squared_error, center_curves=config["errors"].getboolean("centered")
+                    )
                     df_ale_result = pd.concat(
                         (
                             pd.DataFrame(
