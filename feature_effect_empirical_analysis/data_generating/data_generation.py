@@ -105,6 +105,10 @@ class Groundtruth(ABC, BaseEstimator):
             The theoretical partial dependence function for the feature.
         """
 
+    @abstractmethod
+    def __str__(self):
+        """Return dataset name as string."""
+
 
 def _transform_to_target_distribution(
     data: np.ndarray, dist_type: Literal["normal", "uniform"], params: Tuple
