@@ -42,8 +42,12 @@ def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
         return SVR(kernel="rbf")
     if model_name == "ElasticNet":
         return ElasticNet(random_state=42, max_iter=10000)
-    if model_name == "GAM":
+    if model_name == "GAM-f1-correct":
         return GAM(te_features=[(0, 1)], s_features=[2], l_features=[3, 4])
+    if model_name == "GAM-2-add":
+        return GAM(s_features=[0, 1])
+    if model_name == "GAM-2-comb":
+        return GAM(te_features=[(0, 1)], s_features=[0, 1])
     raise NotImplementedError("Base estimator not implemented yet")
 
 
