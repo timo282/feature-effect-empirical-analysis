@@ -35,32 +35,48 @@ class Groundtruth(ABC, BaseEstimator):
         Names of the features.
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        marginal_distributions: List[Tuple[Literal["normal", "uniform"], Tuple]],
+        correlation_matrix: np.ndarray,
+        feature_names: List[str] = None,
+    ):
         self._is_fitted__ = True
         self._estimator_type = "regressor"
+        self._marginal_distributions = marginal_distributions
+        self._correlation_matrix = correlation_matrix
+        if correlation_matrix is not None and correlation_matrix.shape != (
+            len(marginal_distributions),
+            len(marginal_distributions),
+        ):
+            raise ValueError("Correlation matrix must be of shape (n_features, n_features).")
+        self._n_features = len(marginal_distributions)
+        self._feature_names = (
+            feature_names if feature_names is not None else [f"x_{i + 1}" for i in range(self._n_features)]
+        )
 
     def __sklearn_is_fitted__(self):
         return self._is_fitted__
 
     @property
-    @abstractmethod
     def marginal_distributions(self) -> List[Tuple[Literal["normal", "uniform"], Tuple]]:
-        """Marginal distributions of the features."""
+        """Marginal distributions of the main features."""
+        return self._marginal_distributions
 
     @property
-    @abstractmethod
     def correlation_matrix(self) -> Optional[np.ndarray]:
         """Correlation matrix of the features."""
+        return self._correlation_matrix
 
     @property
-    @abstractmethod
     def n_features(self) -> int:
-        """Number of features."""
+        """Total number of features."""
+        return self._n_features
 
     @property
-    @abstractmethod
     def feature_names(self) -> List[str]:
-        """Names of the features."""
+        """Names of all features."""
+        return self._feature_names
 
     def fit(self, X, y):
         """
@@ -182,6 +198,7 @@ def _generate_samples(
         X[:, i] = _transform_to_target_distribution(X[:, i], dist_type, params)
 
     y = groundtruth.predict(X) + noise_sd * generator.standard_normal(n_samples)
+
     return X, y
 
 

@@ -1,4 +1,4 @@
-from typing import Literal, Callable, List, Tuple, Optional
+from typing import Literal, Callable
 import pandas as pd
 import numpy as np
 from scipy.integrate import quad
@@ -12,39 +12,6 @@ class Friedman1Groundtruth(Groundtruth):
 
         y(X) = 10 * sin(pi * X[:, 0] * X[:, 1]) + 20 * (X[:, 2] - 0.5) ** 2 + 10 * X[:, 3] + 5 * X[:, 4].
     """
-
-    def __init__(
-        self, marginal_distributions: List[Tuple[Literal["normal", "uniform"], Tuple]], correlation_matrix: np.ndarray
-    ):
-        super().__init__()
-        if len(marginal_distributions) != 5:
-            raise ValueError("Simple2FGroundtruth requires exactly 5 marginal distributions.")
-        if correlation_matrix.shape != (5, 5):
-            raise ValueError("Correlation matrix must be of shape (5, 5).")
-        self._marginal_distributions = marginal_distributions
-        self._correlation_matrix = correlation_matrix
-        self._n_features = 5
-        self._feature_names = ["x_1", "x_2", "x_3", "x_4", "x_5"]
-
-    @property
-    def marginal_distributions(self) -> List[Tuple[Literal["normal", "uniform"], Tuple]]:
-        """Marginal distributions of the features."""
-        return self._marginal_distributions
-
-    @property
-    def correlation_matrix(self) -> Optional[np.ndarray]:
-        """Correlation matrix of the features."""
-        return self._correlation_matrix
-
-    @property
-    def n_features(self) -> int:
-        """Number of features."""
-        return self._n_features
-
-    @property
-    def feature_names(self) -> List[str]:
-        """Names of the features."""
-        return self._feature_names
 
     def predict(self, X) -> np.ndarray:
         """
