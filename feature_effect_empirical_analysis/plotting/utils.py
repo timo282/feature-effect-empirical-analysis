@@ -41,7 +41,10 @@ def get_feature_effect_plot_style():
 
 
 def create_joined_melted_df(
-    df_model_res: pd.DataFrame, df_pdp_res: pd.DataFrame, noise_name: str = "snr_x"
+    df_model_res: pd.DataFrame,
+    df_pdp_res: pd.DataFrame,
+    noise_name: str = "snr_x",
+    value_vars: list[str] = ["x_1", "x_2", "x_3", "x_4", "x_5"],
 ) -> pd.DataFrame:
     """
     Merge two DataFrames on 'model_id' and reshape the resulting DataFrame to a long format.
@@ -61,6 +64,8 @@ def create_joined_melted_df(
         the values for each feature ('x_1' to 'x_5').
     noise_name : str, optional
         Name of the noise column in the merged DataFrame, by default "snr_x"
+    value_vars : list[str], optional
+        List of feature column names to be reshaped, by default ["x_1", "x_2", "x_3", "x_4", "x_5"]
 
     Returns
     -------
@@ -82,7 +87,6 @@ def create_joined_melted_df(
         "r2_train",
         "r2_test",
     ]
-    value_vars = ["x_1", "x_2", "x_3", "x_4", "x_5"]
     df_melted = pd.melt(
         df_merged, id_vars=id_vars, value_vars=value_vars, var_name="feature", value_name="effect_error"
     )

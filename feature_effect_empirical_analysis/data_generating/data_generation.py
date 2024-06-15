@@ -40,6 +40,7 @@ class Groundtruth(ABC, BaseEstimator):
         marginal_distributions: List[Tuple[Literal["normal", "uniform"], Tuple]],
         correlation_matrix: np.ndarray,
         feature_names: List[str] = None,
+        name: str = None,
     ):
         self._is_fitted__ = True
         self._estimator_type = "regressor"
@@ -53,6 +54,13 @@ class Groundtruth(ABC, BaseEstimator):
         self._n_features = len(marginal_distributions)
         self._feature_names = (
             feature_names if feature_names is not None else [f"x_{i + 1}" for i in range(self._n_features)]
+        )
+        self._name = name if name is not None else (
+            f"{self.__class__.__name__}({self.marginal_distributions}, {self.correlation_matrix.tolist()})".replace(
+                " ", ""
+            )
+            .replace('"', "")
+            .replace("'", "")
         )
 
     def __sklearn_is_fitted__(self):
@@ -77,6 +85,11 @@ class Groundtruth(ABC, BaseEstimator):
     def feature_names(self) -> List[str]:
         """Names of all features."""
         return self._feature_names
+
+    @property
+    def name(self) -> str:
+        """Name of the dataset."""
+        return self._name
 
     def fit(self, X, y):
         """
@@ -121,9 +134,9 @@ class Groundtruth(ABC, BaseEstimator):
             The theoretical partial dependence function for the feature.
         """
 
-    @abstractmethod
     def __str__(self):
         """Return dataset name as string."""
+        return self.name
 
 
 def _transform_to_target_distribution(

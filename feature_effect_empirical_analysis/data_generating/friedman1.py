@@ -90,7 +90,3 @@ class Friedman1Groundtruth(Groundtruth):
                 return complete_integral_12 + integral_3 + 5 + 5 * x5
 
         return partial_dependence
-
-    def __str__(self):
-        s = f"Friedman1Groundtruth({self.marginal_distributions}, {self.correlation_matrix.tolist()})"
-        return s.replace(" ", "").replace("\"", "").replace("'", "")

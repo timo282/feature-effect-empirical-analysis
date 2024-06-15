@@ -32,10 +32,6 @@ class SimpleAdditiveGroundtruth(Groundtruth):
     def get_theoretical_partial_dependence(self, feature: Literal["x_1", "x_2"]) -> Callable:
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleAdditiveGroundtruth.")
 
-    def __str__(self):
-        s = f"SimpleAdditiveGroundtruth({self.marginal_distributions}, {self.correlation_matrix.tolist()})"
-        return s.replace(" ", "").replace('"', "").replace("'", "")
-
 
 class SimpleInteractionGroundtruth(Groundtruth):
     """
@@ -64,10 +60,6 @@ class SimpleInteractionGroundtruth(Groundtruth):
     def get_theoretical_partial_dependence(self, feature: Literal["x_1", "x_2"]) -> Callable:
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleInteractionGroundtruth.")
 
-    def __str__(self):
-        s = f"SimpleInteractionGroundtruth({self.marginal_distributions}, {self.correlation_matrix.tolist()})"
-        return s.replace(" ", "").replace('"', "").replace("'", "")
-
 
 class SimpleCombinedGroundtruth(Groundtruth):
     """
@@ -95,7 +87,3 @@ class SimpleCombinedGroundtruth(Groundtruth):
 
     def get_theoretical_partial_dependence(self, feature: Literal["x_1", "x_2"]) -> Callable:
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleCombinedGroundtruth.")
-
-    def __str__(self):
-        s = f"SimpleCombinedGroundtruth({self.marginal_distributions}, {self.correlation_matrix.tolist()})"
-        return s.replace(" ", "").replace('"', "").replace("'", "")

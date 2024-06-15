@@ -19,39 +19,41 @@ from feature_effect_empirical_analysis.data_generating.friedman1 import Friedman
 
 
 def map_dataset_to_groundtruth(
-    dataset: str, marginals: List[Tuple[Literal["normal", "uniform"], Tuple]], corr_matrix: np.array
+    dataset: str, marginals: List[Tuple[Literal["normal", "uniform"], Tuple]], corr_matrix: np.array, name: str = None
 ) -> Groundtruth:
     if dataset == "SimpleAdditiveGroundtruth":
-        return SimpleAdditiveGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+        return SimpleAdditiveGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix, name=name)
     if dataset == "SimpleInteractionGroundtruth":
-        return SimpleInteractionGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+        return SimpleInteractionGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix, name=name)
     if dataset == "SimpleCombinedGroundtruth":
-        return SimpleCombinedGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+        return SimpleCombinedGroundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix, name=name)
     if dataset == "Friedman1Groundtruth":
-        return Friedman1Groundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix)
+        return Friedman1Groundtruth(marginal_distributions=marginals, correlation_matrix=corr_matrix, name=name)
 
 
 def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
-    if model_name == "RandomForestRegressor":
+    if model_name == "RandomForest":
         return RandomForestRegressor(random_state=42)
-    if model_name == "XGBRegressor-full":
+    if model_name == "XGBoost-full":
         return XGBRegressor(random_state=42)
-    if model_name == "XGBRegressor-f1-correct" or model_name == "XGBRegressor-2-comb":
+    if model_name == "XGBoost-f1-cor" or model_name == "XGBoost-2comb-cor":
         return XGBRegressor(random_state=42, interaction_constraints="[[0, 1]]")
-    if model_name == "XGBRegressor-2-add":
+    if model_name == "XGBoost-2add-cor":
         return XGBRegressor(random_state=42, interaction_constraints="[]")
-    if model_name == "DecisionTreeRegressor":
+    if model_name == "DecisionTree":
         return DecisionTreeRegressor(random_state=42)
     if model_name == "SVM-RBF":
         return SVR(kernel="rbf")
     if model_name == "ElasticNet":
         return ElasticNet(random_state=42, max_iter=10000)
-    if model_name == "GAM-f1-correct":
+    if model_name == "GAM-f1-cor":
         return GAM(te_features=[(0, 1)], s_features=[2], l_features=[3, 4])
-    if model_name == "GAM-2-add":
+    if model_name == "GAM-2add-cor":
         return GAM(s_features=[0, 1])
-    if model_name == "GAM-2-comb":
+    if model_name == "GAM-2comb-cor":
         return GAM(te_features=[(0, 1)], s_features=[0, 1])
+    if model_name == "GAM-4-full":
+        return GAM(te_features=[(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)], s_features=[0, 1, 2, 3])
     raise NotImplementedError("Base estimator not implemented yet")
 
 

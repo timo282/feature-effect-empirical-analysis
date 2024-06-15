@@ -73,8 +73,8 @@ def simulate(
                     pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
                     ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
 
-                    for model_str, model in models:
-                        model_name = f"{model_str}_{sim_no+1}_{n_train}_{snr}"
+                    for model_str, model in models[groundtruth.__class__.__name__]:
+                        model_name = f"{model_str}_{sim_no+1}_{n_train}_{int(snr)}"
 
                         # train and tune model
                         model = train_model(
