@@ -34,8 +34,12 @@ def map_dataset_to_groundtruth(
 def map_modelname_to_estimator(model_name: str) -> BaseEstimator:
     if model_name == "RandomForestRegressor":
         return RandomForestRegressor(random_state=42)
-    if model_name == "XGBRegressor":
+    if model_name == "XGBRegressor-full":
         return XGBRegressor(random_state=42)
+    if model_name == "XGBRegressor-f1-correct" or model_name == "XGBRegressor-2-comb":
+        return XGBRegressor(random_state=42, interaction_constraints="[[0, 1]]")
+    if model_name == "XGBRegressor-2-add":
+        return XGBRegressor(random_state=42, interaction_constraints="[]")
     if model_name == "DecisionTreeRegressor":
         return DecisionTreeRegressor(random_state=42)
     if model_name == "SVM-RBF":
