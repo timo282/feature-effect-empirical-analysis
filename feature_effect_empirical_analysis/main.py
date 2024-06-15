@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from pathlib import Path
 import os
-from typing_extensions import List
+from typing_extensions import List, Tuple
 from joblib import dump
 import numpy as np
 import pandas as pd
@@ -28,7 +28,7 @@ sim_config.read("config.ini")
 
 
 def simulate(
-    models: List[BaseEstimator],
+    models: List[Tuple[str, BaseEstimator]],
     groundtruths: List[Groundtruth],
     n_sim: int,
     n_trains: List[int],
@@ -73,8 +73,7 @@ def simulate(
                     pdp_groundtruth = compute_pdps(groundtruth, X_train, feature_names, config)
                     ale_groundtruth = compute_ales(groundtruth, X_train, feature_names, config)
 
-                    for model in models:
-                        model_str = model.__class__.__name__
+                    for model_str, model in models:
                         model_name = f"{model_str}_{sim_no+1}_{n_train}_{snr}"
 
                         # train and tune model
