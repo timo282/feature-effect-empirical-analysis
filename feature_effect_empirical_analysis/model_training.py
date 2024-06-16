@@ -67,6 +67,9 @@ def train_model(
     tuning_studies_folder: str,
     model_name: str,
 ) -> BaseEstimator:
+
+    optuna.logging.set_verbosity(optuna.logging.ERROR)
+
     study = optimize(
         model=model,
         X_train=X_train,
