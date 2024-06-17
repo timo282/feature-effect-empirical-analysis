@@ -83,7 +83,7 @@ class SimpleCombinedGroundtruth(Groundtruth):
         """
         if isinstance(X, pd.DataFrame):
             X = X.values
-        return X[:, 0] * 0.5 * X[:, 1] ** 2 + X[:, 0] * X[:, 1]
+        return X[:, 0] + 0.5 * X[:, 1] ** 2 + X[:, 0] * X[:, 1]
 
     def get_theoretical_partial_dependence(self, feature: Literal["x_1", "x_2"]) -> Callable:
         raise NotImplementedError("Theoretical partial dependence not implemented for SimpleCombinedGroundtruth.")
