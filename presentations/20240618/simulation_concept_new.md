@@ -6,14 +6,16 @@ Quantification of the error between groundtruth (1D) feature effect and estimate
 
 ## Data Generating Mechanisms
 
-| | Additive:<br>$f(x) = x_1 + 0.5*x_2^2$ | Interaction:<br>$g(x) = x_1*x_2$ | Combined:<br>$h(x) = x_1*x_2 + 0.5*x_2^2$ |
-|----------------------------------|----------------------------------|---------------------------------------|----------------------------------|
-| $\rho=0$, uniform feature distributions | | | |
-| $\rho=0.5$, multivariate normal feature distribution | | | |
+| | Additive:<br>$f(x) = x_1 + 0.5 x_2^2$  | Combined:<br>$f(x) = x_1 + 0.5 x_2^2 + x_1 x_2$ |
+|----------------------------------|----------------------------------|----------------------------------|
+| $\rho=0$, standard normal feature distributions | ✅ | ✅ | 
+| $\rho=0.5$, standard normal feature distributions | ❌ | ❌ | 
+| $\rho=0.9$, standard normal feature distributions | ❌ | ❌ | 
 
 - 1000 training samples
-- SNRs: 20, 10
-- X times on samples drawn with different random seeds
+- SNRs: 10, 5
+- 20 times on samples drawn with different random seeds
+- additionally 2 uncorrelated random noise features with same marginals
 
 ## Estimands and other targets
 Targets of the simulation study are
