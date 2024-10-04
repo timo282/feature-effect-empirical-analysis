@@ -19,7 +19,7 @@ Empirical Partial Dependence estimated on the sampled training data using the gr
 
 $\widehat{PD}_{f, S}(x_S) = \frac{1}{n} \sum_{i=1}^n f(x_S, x_C^{(i)})$
 
-where $x^{(i)}_C$ are actual feature values from the training sample for the features in which we are not interested, n is the number of instances in the sample.
+where $f$ is the groundtruth function, $x_S$ are the features for which the partial dependence function is computed and $x^{(i)}_C$ are actual feature values from the training sample for the features in which we are not interested, n is the number of instances in the sample.
 
 ### 2. Groundtruth ALE
 
@@ -94,7 +94,7 @@ Model PD w.r.t. DGP:
 
 similarly, model ALE w.r.t. DGP:
 - $Err(\widehat{ALE}_{\hat f,S}(x_S), ALE_{f,S}(x_S)) = Err_c(\dots)$
-- $Err(\widehat{ALE}_{\hat f,S}(x_S), \widehat{ALE}_{f,S}(x_S)) = Err_c(\dots)$
+- $Err(\widehat{ALE}_{\hat f,S}(x_S), \widehat{ALE}_{f,S}(x_S)) = Err_c(\widehat{ALE}_{\hat f,S}(x_S), \widehat{ALE}_{f,S}(x_S))$
 - $Err_c(\widehat{ALE}_{\hat f,S}(x_S), f_{S}(x_S))$
 
 or, model main effect w.r.t. DGP:
