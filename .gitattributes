@@ -1,6 +1,6 @@
-notebook_templates/* linguist-documentation=true
-presentations/* linguist-documentation=true
-theoretical_foundation/* linguist-documentation=true
-simulations/* linguist-detectable=false
-*.md linguist-documentation=true
-*.html linguist-documentation=true
+notebook_templates/* linguist-documentation
+presentations/* linguist-documentation
+theoretical_foundation/* linguist-documentation
+simulations/* linguist-detectable
+*.md linguist-documentation
+*.html linguist-documentation
